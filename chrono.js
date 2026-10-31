@@ -169,9 +169,9 @@ function lancer(W,opts){
       <p class="ch-lab">Ressenti du WOD (obligatoire)</p><div class="ch-res">${RESS.map(([n,em,l])=>`<button type="button" class="${ressenti===n?'on':''}" data-ch="res" data-v="${n}"><b>${em}</b>${l}</button>`).join('')}</div>
       <label for="ch-com" class="ch-lab">Décris ce WOD : ce qui était difficile, ce que tu as réussi (obligatoire)</label><textarea id="ch-com" rows="2">${esc(com)}</textarea>
       <p class="ch-lab ch-indic">${pret?'✓ Prêt à enregistrer':'⚠ Choisis un ressenti et écris un commentaire'}</p>
-      <div class="ch-bas"><button type="button" data-ch="annuler">Ne pas enregistrer</button><button type="button" class="ch-ok" data-ch="enreg"${pret?'':' disabled'}>Enregistrer</button></div></div></div>`;
+      <div class="ch-bas"><button type="button" data-ch="annuler" class="${jeter?'confirme':''}">${jeter?'Sûr ? Le WOD sera perdu':'Ne pas enregistrer'}</button><button type="button" class="ch-ok" data-ch="enreg"${pret?'':' disabled'}>Enregistrer</button></div></div></div>`;
   }
-  let ressenti=0,com='',fc='';const notes=ex.map(()=>null);
+  let ressenti=0,com='',fc='',jeter=false;const notes=ex.map(()=>null);
   function fermer(){clearInterval(tick);eveil(false);v.remove();document.documentElement.classList.remove('chrono-ouvert');document.removeEventListener('visibilitychange',vis)}
   const vis=()=>{if(document.visibilityState==='hidden')etat(true)};
   document.addEventListener('visibilitychange',vis);
@@ -208,7 +208,8 @@ function lancer(W,opts){
     else if(a==='pause'){if(pauseA){pauseMs+=Date.now()-pauseA;pauseA=null}else pauseA=Date.now();etat(true)}
     else if(a==='stop'){if(!arret){arret=true}else{if(W.f!=='fortime')R.arrete=Math.round(te);terminer();return}}
     else if(a==='note'){const i=+b.dataset.i;notes[i]=+b.dataset.v;v.querySelectorAll(`[data-ch="note"][data-i="${i}"]`).forEach(x=>x.classList.toggle('on',x===b));return}
-    else if(a==='res'){ressenti=+b.dataset.v;const c=v.querySelector('#ch-com');if(c)com=c.value;peindreFin();return}
+    else if(a==='res'){jeter=false;ressenti=+b.dataset.v;const c=v.querySelector('#ch-com');if(c)com=c.value;peindreFin();return}
+    else if(a==='annuler'&&!jeter){jeter=true;const c=v.querySelector('#ch-com');if(c)com=c.value;peindreFin();return}
     else if(a==='annuler'){fermer();opts.onEtat&&opts.onEtat(null);opts.onAnnule&&opts.onAnnule();return}
     else if(a==='enreg'){const fcv=+((v.querySelector('#ch-fc')||{}).value||0)||null;com=(v.querySelector('#ch-com')||{}).value||com;if(!ressenti||com.trim().length<3)return;fermer();
       const res={rounds:R.rounds,restants:R.restants,tours:R.tours,amIdx:R.amIdx,tourT:R.tourT,splits:R.splits,temps:R.temps,arrete:R.arrete};if(SEQ)res.minutes=R.minutes;

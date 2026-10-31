@@ -25,6 +25,7 @@ window.EPS_AIDE={appli:'Cross training · Élève',bouton:false,publics:[
 <li><b>Charges</b> : pour les exercices avec kettlebell, haltère ou barre, note la charge en kg dans le WOD (proposée d’après « Mes charges »).</li>
 <li><b>Tablette en veille ou page rechargée</b> : rouvre le carnet, un bandeau propose <b>Reprendre</b> ; le chrono compte le temps passé.</li>
 <li><b>Binôme</b> : après chaque WOD, « À qui le tour ? » passe au partenaire, qui devient le coach.</li></ul>`},
+{t:'Démonstration',html:`<p>Sur l’écran d’accueil (bouton « Changer » si un carnet est ouvert), carte <b>Démonstration → Ouvrir la démo</b> : un binôme fictif « Alice · Bruno », code 0000, pour essayer sans classe.</p>`},
 {t:'Envoyer en fin de séance',html:`<ol><li>Onglet <b>Envoyer</b> : montre les <b>QR codes</b> au professeur (un par élève), ou <span class="bouton">Envoyer ma séance du jour en ligne</span> quand le professeur l’a activé.</li>
 <li>Un bandeau rouge « Séance non envoyée » reste tant que ce n’est pas fait.</li></ol>`},
 {t:'Code oublié, changer de tablette',html:`<ul><li><b>Code oublié</b> : le carnet ne s’ouvre plus. Supprimez-le et créez un nouveau binôme ; vos séances déjà envoyées sont chez le professeur.</li>

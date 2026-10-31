@@ -89,7 +89,7 @@ function score(W){const r=W.res||{};
       return r.tours+' tour'+(r.tours>1?'s':'')+(r.amIdx?' + '+r.amIdx+'/'+n+' exercice'+(r.amIdx>1?'s':''):'')+(moy?' · '+moy+' s par tour':'')}
     return r.tours+' tours + '+(r.plus||0)}
   if(W.f==='fortime'){const nb=W.p&&W.p.pal?W.p.pal.length:(W.p&&W.p.tours)||3;
-    if(r.temps&&(r.tours==null||r.tours>=nb))return mmss(r.temps)+(r.norep?' + '+r.norep*5+' s de no rep':'')+((r.splits||[]).length?' · paliers : '+r.splits.map(mmss).join(', '):'');
+    if(r.temps&&(r.tours==null||r.tours>=nb))return mmss(r.temps)+(r.norep?' + '+r.norep*5+' s de no rep':'')+((r.splits||[]).length?' · '+(W.p&&W.p.pal?'paliers':'tours')+' : '+r.splits.map(mmss).join(', '):'');
     if(r.tours!=null)return (W.p&&W.p.pal?'paliers':'tours')+' faits : '+r.tours+' / '+nb+(W.p&&W.p.cap&&r.temps?' (cap atteint)':'');
     return ''}
   return ''}
