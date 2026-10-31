@@ -34,7 +34,7 @@
 .bt-video.sur-img{position:absolute;top:6px;right:6px;z-index:1}
 .bt-video.mini{width:24px;height:24px;min-width:24px;font-size:10px;margin-left:4px}
 [data-video].ch-img{position:relative;cursor:pointer}
-.ch-img .bt-video{position:absolute;top:4px;right:4px}
+.ch-img .bt-video{position:absolute;top:4px;right:4px;border:2px solid #fff}
 .vid-voile{position:fixed;inset:0;z-index:200;background:rgba(10,15,25,.8);display:flex;align-items:center;justify-content:center;padding:12px}
 .vid-fen{background:#fff;color:#111827;border-radius:16px;width:min(560px,100%);max-height:100%;overflow:auto;padding:12px}
 .vid-tete{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}

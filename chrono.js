@@ -7,7 +7,13 @@
 'use strict';
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let ac=null,lock=null;
-function son(f,d,v){try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();
+// Son / vibreur / muet : même réglage (et même clé) que l'appli chrono d'origine
+const MODES=[['sound','🔊 Son'],['vibrate','📳 Vibreur'],['silent','🔇 Muet']];
+function mode(){try{return localStorage.getItem('eps_sound_mode')||'sound'}catch(e){return 'sound'}}
+function modeSuivant(){const i=MODES.findIndex(x=>x[0]===mode()),n=MODES[(i+1)%MODES.length][0];try{localStorage.setItem('eps_sound_mode',n)}catch(e){}return n}
+const libMode=()=>(MODES.find(x=>x[0]===mode())||MODES[0])[1];
+function son(f,d,v){const m=mode();if(m==='silent')return;if(m==='vibrate'){try{navigator.vibrate&&navigator.vibrate(Math.round(Math.min(d,.5)*400)+40)}catch(e){}return}
+  try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();
   const o=ac.createOscillator(),g=ac.createGain(),t=ac.currentTime;o.frequency.value=f;g.gain.setValueAtTime(v||.3,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+d+.02)}catch(e){}}
 const bipCourt=()=>son(880,.12),bipGo=()=>son(1320,.45,.4),bipFin=()=>{son(660,.3,.4);setTimeout(()=>son(440,.5,.4),320)};
 async function eveil(on){try{if(on&&navigator.wakeLock)lock=await navigator.wakeLock.request('screen');else if(lock){lock.release();lock=null}}catch(e){}}
@@ -23,7 +29,8 @@ function lancer(W,opts){
   if(W.f==='tabata'){for(let i=0;i<p.n;i++){plan.push(['eff',p.e,i]);if(i<p.n-1)plan.push(['rep',p.r,i])}}
   else if(W.f==='emom'||W.f==='emom1'){for(let i=0;i<p.min;i++)plan.push(['min',60,i])}
   else if(W.f==='amrap')plan.push(['amrap',p.min*60,0]);
-  else if(W.f==='fortime')plan.push(['ft',(p.cap||6)*60,0]);
+  else if(W.f==='fortime')plan.push(['ft',p.pal?(p.cap?p.cap*60:3600):(p.cap||6)*60,0]);
+  const NBFT=p.pal?p.pal.length:(p.tours||3),sansCap=W.f==='fortime'&&p.pal&&!p.cap;
   const total=plan.reduce((a,x)=>a+x[1],0);
   const v=document.createElement('div');v.className='chrono-voile';v.setAttribute('role','dialog');v.setAttribute('aria-modal','true');
   document.body.appendChild(v);document.documentElement.classList.add('chrono-ouvert');
@@ -32,7 +39,7 @@ function lancer(W,opts){
   const exo=i=>{const e=ex[i];return e?(opts.mv(e.m)||{nom:e.m}):null};
   const verLib=x=>x<0?'version −':x>0?'version +':'version normale';
   function exoHTML(i,petit){const e=ex[i],m=exo(i);if(!m)return '';
-    return `<div class="ch-exo${petit?' petit':''}"><div class="ch-img"${window.aVideo&&aVideo(e.m)?` data-video="${e.m}" title="Voir la vidéo"`:''}>${opts.visuel(m)}${window.aVideo&&aVideo(e.m)?'<span class="bt-video mini" aria-hidden="true">▶</span>':''}</div><div><b>${esc(m.nom)}</b>${W.f==='emom'||W.f==='fortime'||W.f==='amrap'?`<span>${e.reps||''} rép.</span>`:''}<span class="ch-ver">${verLib(R.versions[i])}</span>
+    return `<div class="ch-exo${petit?' petit':''}"><div class="ch-img"${window.aVideo&&aVideo(e.m)?` data-video="${e.m}" title="Voir la vidéo"`:''}>${opts.visuel(m)}${window.aVideo&&aVideo(e.m)?'<span class="bt-video mini" aria-hidden="true">▶</span>':''}</div><div><b>${esc(m.nom)}</b>${W.f==='fortime'&&p.pal?`<span>${p.pal[Math.min(R.tours,NBFT-1)]} rép.</span>`:W.f==='emom'||W.f==='fortime'||W.f==='amrap'?`<span>${e.reps||''} rép.</span>`:''}<span class="ch-ver">${verLib(R.versions[i])}</span>
       <div class="ch-reg"><button type="button" data-ch="moins" data-i="${i}" aria-label="Version plus facile">−</button><button type="button" data-ch="plusv" data-i="${i}" aria-label="Version plus difficile">+</button></div></div></div>`}
   function peindre(){
     if(fini)return;
@@ -61,19 +68,20 @@ function lancer(W,opts){
       corps=(minuteFaite>=i?'':`<button type="button" class="ch-gros ch-fini" data-ch="fini" data-i="${i}">Fini !<small>touche dès que la dernière répétition est faite</small></button>`)+`<div class="ch-liste">${ex.map((e,j)=>exoHTML(j,true)).join('')}</div>`;}
     else if(typ==='amrap'){couleur='eff';titre='AMRAP';sous=R.tours+' tours + '+R.plus+' rép.';
       corps=`<div class="ch-boutons"><button type="button" class="ch-gros" data-ch="tour">+1 tour</button><button type="button" class="ch-moyen" data-ch="rep">+1 rép.</button></div><div class="ch-liste">${ex.map((e,j)=>exoHTML(j,true)).join('')}</div>`;}
-    else if(typ==='ft'){couleur='eff';titre='FOR TIME';grand=mmss(o.dans);sous='Tour '+Math.min(R.tours+1,p.tours||3)+' / '+(p.tours||3)+' · limite '+(p.cap||6)+' min';
-      corps=`<div class="ch-boutons"><button type="button" class="ch-gros" data-ch="tourft">Tour terminé</button></div><div class="ch-liste">${ex.map((e,j)=>exoHTML(j,true)).join('')}</div>`;}
+    else if(typ==='ft'){couleur='eff';titre='FOR TIME';grand=mmss(o.dans);const k=Math.min(R.tours,NBFT-1);
+      sous=p.pal?'Palier '+(k+1)+' / '+NBFT+' : '+p.pal[k]+' rép. de chaque exercice'+(p.cap?' · limite '+p.cap+' min':' · sans limite de temps'):'Tour '+(k+1)+' / '+NBFT+' · limite '+(p.cap||6)+' min';
+      corps=`<div class="ch-boutons"><button type="button" class="ch-gros" data-ch="tourft">${p.pal?'Palier terminé':'Tour terminé'}</button></div><div class="ch-liste">${ex.map((e,j)=>exoHTML(j,true)).join('')}</div>`;}
     const fin=Math.max(0,total-t);
-    v.innerHTML=`<div class="chr ${couleur}${pauseA?' pause':''}"><div class="ch-haut"><span>${esc(opts.athlete||'')}</span><span>${esc(opts.titreWod||'')}</span><span>reste ${mmss(fin)}</span></div>
+    v.innerHTML=`<div class="chr ${couleur}${pauseA?' pause':''}"><div class="ch-haut"><span>${esc(opts.athlete||'')}</span><span>${esc(opts.titreWod||'')}</span><span>${sansCap?'':'reste '+mmss(fin)}</span></div>
       <p class="ch-titre">${titre}</p><p class="ch-temps">${grand}</p><p class="ch-sous">${sous}</p>
       <div class="ch-corps">${corps}</div>
-      <div class="ch-bas"><button type="button" class="ch-norep" data-ch="norep">No rep <b>${R.norep}</b></button><button type="button" data-ch="pause">${pauseA?'Reprendre':'Pause'}</button><button type="button" data-ch="stop" class="${arret?'confirme':''}">${arret?'Sûr ? Retoucher':'Arrêter'}</button></div></div>`;
+      <div class="ch-bas"><button type="button" class="ch-norep" data-ch="norep">No rep <b>${R.norep}</b></button><button type="button" data-ch="pause">${pauseA?'Reprendre':'Pause'}</button><button type="button" data-ch="sonmode">${libMode()}</button><button type="button" data-ch="stop" class="${arret?'confirme':''}">${arret?'Sûr ? Retoucher':'Arrêter'}</button></div></div>`;
   }
   function exoDuRound(i){return root.CTL.exoDuRound(W,i)}
   const compteur=(n,l)=>`<button type="button" class="ch-gros ch-plus" data-ch="plus">+1<small>${n} ${l}</small></button><button type="button" class="ch-moins1" data-ch="moins1">− 1</button>`;
   function terminer(){if(fini)return;fini=true;clearInterval(tick);eveil(false);bipFin();
     const t=ecoule();
-    if(W.f==='fortime'&&R.temps==null)R.temps=Math.round(Math.min(t-PREP,(p.cap||6)*60));
+    if(W.f==='fortime'&&R.temps==null){if(p.pal&&!p.cap)R.arrete=Math.round(Math.max(0,t-PREP));else R.temps=Math.round(Math.min(t-PREP,(p.pal?p.cap:(p.cap||6))*60))}
     if(W.f==='emom1'&&!R.derniere)R.derniere=minuteFaite+1;
     if(W.f==='emom')for(let i=0;i<p.min;i++)if(R.restants[i]==null)R.restants[i]=0;
     if(W.f==='tabata'){const fait=Math.min(p.n,Math.ceil(Math.max(0,t-PREP)/(p.e+p.r)));for(let i=0;i<fait;i++)if(R.rounds[i]==null)R.rounds[i]=0}
@@ -96,7 +104,8 @@ function lancer(W,opts){
     else if(a==='fini'&&o&&o.ph[0]==='min'){const i=+b.dataset.i;if(minuteFaite<i){minuteFaite=i;R.restants[i]=Math.round(o.reste);if(W.f==='emom1')R.derniere=i+1}}
     else if(a==='tour')R.tours++,R.plus=0;
     else if(a==='rep')R.plus++;
-    else if(a==='tourft'){R.tours++;if(R.tours>=(p.tours||3)){R.temps=Math.round(t-PREP);terminer();return}}
+    else if(a==='tourft'){R.tours++;if(R.tours>=NBFT){R.temps=Math.round(t-PREP);terminer();return}}
+    else if(a==='sonmode'){modeSuivant();if(mode()==='vibrate')try{navigator.vibrate&&navigator.vibrate(60)}catch(x){}}
     else if(a==='pause'){if(pauseA){pauseMs+=Date.now()-pauseA;pauseA=null}else pauseA=Date.now()}
     else if(a==='stop'){if(!arret){arret=true}else{if(W.f==='amrap'||W.f==='tabata'||W.f==='emom'||W.f==='emom1'){R.arrete=Math.round(Math.max(0,t-PREP))}terminer();return}}
     else if(a==='note'){const i=+b.dataset.i;notes[i]=+b.dataset.v;v.querySelectorAll(`[data-ch="note"][data-i="${i}"]`).forEach(x=>x.classList.toggle('on',x===b));return}
@@ -107,10 +116,11 @@ function lancer(W,opts){
       opts.onFin({res,fc,ressenti:ressenti||null,regulations:R.regul,noRep:R.norep,versions:R.versions,notes});return}
     peindre()});
   // départ : un toucher (autorise le son sur iPad)
-  v.innerHTML=`<div class="chr prep"><div class="ch-haut"><span>${esc(opts.athlete||'')}</span><span>${esc(opts.titreWod||'')}</span><span>${mmss(total-PREP)}</span></div>
+  v.innerHTML=`<div class="chr prep"><div class="ch-haut"><span>${esc(opts.athlete||'')}</span><span>${esc(opts.titreWod||'')}</span><span>${sansCap?'sans limite':mmss(total-PREP)}</span></div>
     <p class="ch-titre">Prêts ?</p><p class="ch-sous">L’athlète se place. Le partenaire tient la tablette : il compte (+1), note les no rep et le temps restant.</p>
     <div class="ch-corps"><div class="ch-liste">${ex.map((e,j)=>exoHTML(j,true)).join('')}</div></div>
-    <div class="ch-bas"><button type="button" data-ch2="annuler">Annuler</button><button type="button" class="ch-ok" data-ch2="go">Départ (10 s)</button></div></div>`;
+    <div class="ch-bas"><button type="button" data-ch2="annuler">Annuler</button><button type="button" data-ch2="son">${libMode()}</button><button type="button" class="ch-ok" data-ch2="go">Départ (10 s)</button></div></div>`;
+  v.querySelector('[data-ch2="son"]').onclick=e=>{modeSuivant();e.currentTarget.textContent=libMode()};
   v.querySelector('[data-ch2="go"]').onclick=()=>{son(1,.01,.001);t0=Date.now();eveil(true);tick=setInterval(peindre,200);peindre()};
   v.querySelector('[data-ch2="annuler"]').onclick=()=>{fermer();opts.onAnnule&&opts.onAnnule()};
   return {fermer};

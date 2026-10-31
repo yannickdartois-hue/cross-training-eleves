@@ -180,13 +180,13 @@ const MOBILES = {
   filieres:["Intensif Cardio"], duree:21},
  emom:"EMOM (les deux mobiles) : 1) nombre de régulations des répétitions (N1 plus de 2, N2 1 à 2, N3 aucune) ; 2) temps de récupération restant sur 1 min (N1 plus de 30 s, N2 20 à 30 s, N3 10 à 20 s) ; 3) niveau des exercices (3 à 4 exercices de niveau 2 en modéré, de niveau 3 en élevé)."
 };
-/* Correspondance avec les 3 filières de l'appli chrono élève */
+/* Correspondance avec les 3 filières de l'ancienne appli chrono (remplacée par cross-training-eleves) */
 const FILIERES_APPLI = [
  ["Gainage – Tonification (violet)","Intensité modérée","Exercices surtout N1 et N2 : bonne base pour le TABATA modéré ; ajouter du N2 dynamique pour monter la FC à 140."],
  ["Endurance Force (bleu)","Intensité modérée","Le cœur du mobile modéré : EMOM à 7 répétitions et plus, N2."],
  ["Intensif Cardio (orange)","Intensité élevée","Exercices N3 avec impulsions : TABATA courts et EMOM élevé."]
 ];
-const LIEN_CHRONO = "https://yannickdartois-hue.github.io/cross-training-pompidou/";
+const LIEN_ELEVE = "https://yannickdartois-hue.github.io/cross-training-eleves/";
 
 /* ---------- Fréquence cardiaque ---------- */
 const FC = {
@@ -331,7 +331,7 @@ const SOURCES = [
   ["GAREEPS, académie de Montpellier : démarche SCE, SRP, STOM.","https://disciplines.ac-montpellier.fr/eps/gareeps"],
   ["I. Tabata et coll. (1996), « Effects of moderate-intensity endurance and high-intensity intermittent training on anaerobic capacity and VO2max », Med Sci Sports Exerc 28(10).",""],
   ["Fiches d’évaluation de l’équipe EPS de Pompidou (2021 à 2025) et travaux de T. L., G. G., V. C.",""],
-  ["Appli chrono élève Cross Training Pompidou.", "https://yannickdartois-hue.github.io/cross-training-pompidou/"]
+  ["Appli élève Cross training (chrono, carnet, QR).", "https://yannickdartois-hue.github.io/cross-training-eleves/"]
 ];
 
 /* ================== FICHES (réutilisées d'une séance à l'autre) ==================

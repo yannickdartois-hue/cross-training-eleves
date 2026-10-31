@@ -23,27 +23,35 @@ const PRESETS=[
  {id:'te3',nom:'TABATA élevé N3',f:'tabata',p:{e:20,r:10,n:10},nb:5,ordre:'v',mob:'elev',ep:1,aide:'2 × 5 exercices · 5 min'},
  {id:'ts',nom:'TABATA spécial (une zone)',f:'tabata',p:{e:20,r:10,n:10},nb:5,ordre:'v',mob:'elev',ep:1,special:1,aide:'une seule zone : INF, SUP, TRONC ou CARDIO'},
  {id:'em5',nom:'EMOM élevé 5 min',f:'emom',p:{min:5},nb:3,mob:'elev',ep:1,aide:'3 à 4 exercices de niveau 3'},
- {id:'t0',nom:'TABATA découverte 20/10 × 8',f:'tabata',p:{e:20,r:10,n:8},nb:2,ordre:'v',aide:'le Tabata d’origine · 4 min'},
- {id:'t20',nom:'TABATA 20/20 × 8',f:'tabata',p:{e:20,r:20,n:8},nb:4,ordre:'v',aide:'5 min 20'},
+ {id:'t0',nom:'TABATA découverte 20/10 × 8',f:'tabata',p:{e:20,r:10,n:8},nb:2,ordre:'v',libre:1,aide:'le Tabata d’origine · 4 min'},
+ {id:'tl',nom:'TABATA à régler',f:'tabata',p:{e:30,r:10,n:8},nb:4,ordre:'v',libre:1,aide:'effort/repos au choix (20/10, 30/10, 40/20, 45/15…) et 1 à 40 cycles'},
+ {id:'t20',nom:'TABATA 20/20 × 8',f:'tabata',p:{e:20,r:20,n:8},nb:4,ordre:'v',libre:1,aide:'5 min 20'},
  {id:'em6',nom:'EMOM 6 min',f:'emom',p:{min:6},nb:2,aide:'au top de chaque minute'},
  {id:'am6',nom:'AMRAP 6 min',f:'amrap',p:{min:6},nb:3,aide:'le plus de tours possible'},
  {id:'am8',nom:'AMRAP 8 min',f:'amrap',p:{min:8},nb:3,aide:'le plus de tours possible'},
+ {id:'fp1',nom:'FOR TIME paliers N1 (6 → 1)',f:'fortime',p:{pal:[6,5,4,3,2,1],cap:0},nb:3,aide:'6 rép. de chaque exercice, puis 5, 4… jusqu’à 1 · 21 rép. par exercice'},
+ {id:'fp2',nom:'FOR TIME paliers N2 (8 → 1)',f:'fortime',p:{pal:[8,7,6,5,4,3,2,1],cap:0},nb:3,aide:'8, 7, 6… jusqu’à 1 · 36 rép. par exercice'},
+ {id:'fp3',nom:'FOR TIME paliers N3 (10 → 1)',f:'fortime',p:{pal:[10,9,8,7,6,5,4,3,2,1],cap:0},nb:3,aide:'10, 9, 8… jusqu’à 1 · 55 rép. par exercice'},
  {id:'ft',nom:'FOR TIME 3 tours',f:'fortime',p:{tours:3,cap:6},nb:3,aide:'le plus vite possible, 6 min maximum'},
- {id:'e1',nom:'EMOM+1',f:'emom1',p:{min:10,dep:3},nb:1,aide:'une répétition de plus chaque minute'}
+ {id:'e1',nom:'EMOM+1',f:'emom1',p:{min:10,dep:6},nb:1,aide:'une répétition de plus chaque minute'}
 ];
+// Réglages repris de l'appli chrono « cross-training-pompidou »
+const NIV_REPS=[4,6,8,10,12]; // N0 à N4 : répétitions par exercice (AMRAP, EMOM) ou au départ (EMOM+1)
+const TABATA_REGLAGES=[[20,10],[30,10],[20,20],[40,20],[10,20],[30,30],[45,15]];
+const somme=a=>(a||[]).reduce((x,y)=>x+y,0);
 const NOM_F={tabata:'TABATA',emom:'EMOM',amrap:'AMRAP',fortime:'FOR TIME',emom1:'EMOM+1'};
 function dureeS(W){const p=W.p||{};
   if(W.f==='tabata')return p.n*(p.e+p.r);
   if(W.f==='emom'||W.f==='emom1'||W.f==='amrap')return p.min*60;
-  if(W.f==='fortime')return (p.cap||6)*60;
+  if(W.f==='fortime')return p.pal?(p.cap||0)*60:(p.cap||6)*60;
   return 0}
 const mmss=s=>{s=Math.max(0,Math.round(s));return Math.floor(s/60)+' min'+(s%60?' '+String(s%60).padStart(2,'0'):'')};
 function titreWod(W){const p=W.p||{};
   if(W.f==='tabata')return 'TABATA '+p.e+'/'+p.r+' × '+p.n;
   if(W.f==='emom')return 'EMOM '+p.min+' min';
-  if(W.f==='emom1')return 'EMOM+1 (départ '+(p.dep||3)+')';
+  if(W.f==='emom1')return 'EMOM+1 '+p.min+' min (départ '+(p.dep||3)+')';
   if(W.f==='amrap')return 'AMRAP '+p.min+' min';
-  if(W.f==='fortime')return 'FOR TIME '+(p.tours||3)+' tours';
+  if(W.f==='fortime')return p.pal?'FOR TIME '+p.pal[0]+' → '+p.pal[p.pal.length-1]+(p.cap?' (cap '+p.cap+' min)':''):'FOR TIME '+(p.tours||3)+' tours';
   return W.f}
 // Exercice du round i d'un Tabata (vertical : 1,2,3,4,1,2… ; horizontal : 1,1,2,2…)
 function exoDuRound(W,i){const k=(W.ex||[]).length||1;
@@ -63,7 +71,10 @@ function score(W){const r=W.res||{};
   if(W.f==='emom'){const n=niveauEmom(r.restants);return n?'repos moyen '+n.moy+' s'+(n.niv?' (N'+n.niv+')':' (trop dur)'):''}
   if(W.f==='emom1')return r.derniere?'dernière minute réussie : '+r.derniere+' ('+((W.p.dep||3)+r.derniere-1)+' rép.)':'';
   if(W.f==='amrap')return r.tours!=null?r.tours+' tours + '+(r.plus||0):'';
-  if(W.f==='fortime')return r.temps?mmss(r.temps)+(r.norep?' + '+r.norep*5+' s de no rep':''):'';
+  if(W.f==='fortime'){const nb=W.p&&W.p.pal?W.p.pal.length:(W.p&&W.p.tours)||3;
+    if(r.temps&&(r.tours==null||r.tours>=nb))return mmss(r.temps)+(r.norep?' + '+r.norep*5+' s de no rep':'');
+    if(r.tours!=null)return (W.p&&W.p.pal?'paliers':'tours')+' faits : '+r.tours+' / '+nb+(W.p&&W.p.cap&&r.temps?' (cap atteint)':'');
+    return ''}
   return ''}
 
 /* ---------- Contrôle du projet de l'épreuve (référentiel) ---------- */
@@ -135,5 +146,5 @@ function decrireWod(w,MOUV){
   const ex=(w.exercices||[]).map(e=>{const m=MOUV.find(x=>x.id===e.id)||{};return {nom:e.nom||m.nom||e.id,zone:e.zone||m.z||'',niveau:e.niveau||m.n||null,version:e.version||0,reps:e.reps||0,note:e.noteExecution||null}});
   return {titre:titreWod(W),format:ps?ps.nom:'',duree:dureeS(W),ex};
 }
-root.CTL={decrireWod,VERSION_DONNEES,parcours,NOM_NIV,NOM_DEM,PRESETS,NOM_F,dureeS,mmss,titreWod,exoDuRound,FOURCHETTE,fcDans,niveauEmom,regularite,score,controleEpreuve,slug,nomFichier,versQR,depuisQR,chaineQR};
+root.CTL={NIV_REPS,TABATA_REGLAGES,somme,decrireWod,VERSION_DONNEES,parcours,NOM_NIV,NOM_DEM,PRESETS,NOM_F,dureeS,mmss,titreWod,exoDuRound,FOURCHETTE,fcDans,niveauEmom,regularite,score,controleEpreuve,slug,nomFichier,versQR,depuisQR,chaineQR};
 })(typeof window!=='undefined'?window:globalThis);
