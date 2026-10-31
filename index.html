@@ -256,6 +256,7 @@ i.p1::after{content:"1";color:#fff}i.p2::after{content:"2";color:#000}i.p3::afte
 .zones{display:flex;flex-wrap:wrap;gap:6px;margin:12px 0 8px}.zones button{border:1.5px solid var(--trait);background:var(--craie);border-radius:999px;padding:6px 12px;min-height:40px}.zones button.on{background:var(--ligne);color:#fff;border-color:var(--ligne)}
 .mvs{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;max-height:46vh;overflow:auto;padding:2px}
 .mvb{display:flex;flex-direction:column;align-items:center;text-align:center;border:1.5px solid var(--trait);background:#fff;color:#172033;border-radius:12px;padding:6px;min-height:150px}
+.mvc{position:relative;display:flex}.mvc>.mvb{flex:1;width:100%}
 .mvb .mv-v{display:grid;place-items:center;height:80px;width:100%}.mvb img{max-height:80px;max-width:100%;object-fit:contain}.mvb svg{width:100%;height:80px}
 .mvb i{font-style:normal;font-size:11px;color:#5b6470}.mvb b{font-size:14px;line-height:1.15;margin-top:4px}.mvb small{font-size:12px;color:#5b6470}
 .ed-liste{padding-left:22px;margin:8px 0}.ed-liste li{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid var(--trait)}
@@ -325,6 +326,8 @@ html.chrono-ouvert,html.chrono-ouvert body{overflow:hidden}
 <script src="logique.js"></script>
 <script src="jsqr.js"></script>
 <script src="scan.js"></script>
+<script src="videos.js"></script>
+<script src="lecteur.js"></script>
 <script src="chrono.js"></script>
 <script src="app.js"></script>
 <script>if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});</script>

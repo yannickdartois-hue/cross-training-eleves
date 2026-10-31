@@ -177,7 +177,7 @@ function programme(n){
 }
 const pastFC=(fc,mob)=>{const d=CTL.fcDans(fc,mob);return fc?`<span class="fc ${d==null?'':d===0?'dans':d<0?'sous':'dessus'}">${fc}${d==null?'':d===0?' ✓':d<0?' ↓':' ↑'}</span>`:'<span class="muted">—</span>'};
 function carteWod(W,i,mob){
-  const ex=(W.ex||[]).map(e=>{const m=mvById(e.m)||{nom:e.m};return `<span class="wx">${esc(m.nom)}${e.reps&&W.f!=='tabata'?' × '+e.reps:''}${e.v?`<em>${e.v<0?'−':'+'}</em>`:''}${W.fait&&e.note?` <small>exéc. ${e.note}/5</small>`:''}</span>`}).join('');
+  const ex=(W.ex||[]).map(e=>{const m=mvById(e.m)||{nom:e.m};return `<span class="wx">${esc(m.nom)}${boutonVideo(e.m,'mini')}${e.reps&&W.f!=='tabata'?' × '+e.reps:''}${e.v?`<em>${e.v<0?'−':'+'}</em>`:''}${W.fait&&e.note?` <small>exéc. ${e.note}/5</small>`:''}</span>`}).join('');
   const sc=W.fait?CTL.score(W):'';
   return `<article class="wod${W.fait?' fait':''}"><header><b>${esc(CTL.titreWod(W))}</b>${W.special?'<span class="pill">spécial</span>':''}<span class="pill">${W.fait?'fait':'prévu'}</span></header>
     <div class="wxs">${ex||'<span class="muted small">aucun exercice</span>'}</div>
@@ -233,12 +233,12 @@ function peindreEditeur(){
   fen(`<h3>${esc(CTL.titreWod(W))}${W.special?' · spécial':''}</h3><p class="small muted">${esc(ps.aide||'')} · ${esc(CTL.mmss(CTL.dureeS(W)))}${ps.nb?' · '+ps.nb+' exercice'+(ps.nb>1?'s':'')+' conseillé'+(ps.nb>1?'s':''):''}</p>
     ${W.f==='tabata'?`<div class="rangee"><span class="small">Ordre</span><button type="button" class="bt mini ${W.ordre!=='h'?'noir':''}" data-act="ordre" data-v="v">Vertical 1-2-3-4-1…</button><button type="button" class="bt mini ${W.ordre==='h'?'noir':''}" data-act="ordre" data-v="h">Horizontal 1-1-2-2…</button></div>`:''}
     ${W.f==='emom'||W.f==='amrap'?`<div class="rangee"><label class="small" for="ed-min">Durée (min)</label><input id="ed-min" class="num" type="number" min="2" max="20" value="${W.p.min}" data-ed="min"></div>`:''}
-    <ol class="ed-liste">${W.ex.map((e,k)=>{const m=mvById(e.m)||{nom:e.m};return `<li><span>${esc(m.nom)} <small class="muted">${m.z||''} N${m.n||''}</small></span>${reps?`<input class="num" type="number" min="1" max="60" value="${e.reps||(W.f==='emom'?7:10)}" data-ed="reps" data-k="${k}" aria-label="Répétitions">`:''}
+    <ol class="ed-liste">${W.ex.map((e,k)=>{const m=mvById(e.m)||{nom:e.m};return `<li><span>${esc(m.nom)}${boutonVideo(e.m,'mini')} <small class="muted">${m.z||''} N${m.n||''}</small></span>${reps?`<input class="num" type="number" min="1" max="60" value="${e.reps||(W.f==='emom'?7:10)}" data-ed="reps" data-k="${k}" aria-label="Répétitions">`:''}
       <span class="ver"><button type="button" class="${e.v<0?'on':''}" data-act="ever" data-k="${k}" data-v="-1">−</button><button type="button" class="${!e.v?'on':''}" data-act="ever" data-k="${k}" data-v="0">=</button><button type="button" class="${e.v>0?'on':''}" data-act="ever" data-k="${k}" data-v="1">+</button></span>
       <button type="button" class="x" data-act="edel" data-k="${k}" aria-label="Retirer">✕</button></li>`}).join('')||'<li class="muted small">Touche les exercices ci-dessous pour les ajouter.</li>'}</ol>
     ${W.f==='emom1'?`<div class="rangee"><label class="small" for="ed-dep">Répétitions à la 1re minute</label><input id="ed-dep" class="num" type="number" min="1" max="15" value="${W.p.dep||3}" data-ed="dep"></div>`:''}
     <div class="zones">${[['','Toutes']].concat(Object.keys(ZONES).map(z=>[z,ZONES[z].nom])).map(z=>`<button type="button" class="${ED.zone===z[0]?'on':''}" data-act="ezone" data-v="${z[0]}">${esc(z[1])}</button>`).join('')}</div>
-    <div class="mvs">${L.map(m=>`<button type="button" class="mvb" data-act="eadd" data-v="${m.id}"><span class="mv-v">${mvVisuel(m)}</span><b>${esc(m.nom)}</b>${m.aussi?`<i>${esc(m.aussi)}</i>`:''}<small>${m.z} · N${m.n}${m.m!=='pdc'?' · '+MATERIEL[m.m].court:''}</small></button>`).join('')}</div>
+    <div class="mvs">${L.map(m=>`<div class="mvc"><button type="button" class="mvb" data-act="eadd" data-v="${m.id}"><span class="mv-v">${mvVisuel(m)}</span><b>${esc(m.nom)}</b>${m.aussi?`<i>${esc(m.aussi)}</i>`:''}<small>${m.z} · N${m.n}${m.m!=='pdc'?' · '+MATERIEL[m.m].court:''}</small></button>${boutonVideo(m.id,'sur-img')}</div>`).join('')}</div>
     <div class="rangee" style="margin-top:12px;justify-content:space-between"><button class="bt" type="button" data-act="fermer">Annuler</button><button class="bt orange" type="button" data-act="esave">Enregistrer le WOD</button></div>`,'large');
 }
 

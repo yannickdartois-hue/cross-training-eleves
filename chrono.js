@@ -32,7 +32,7 @@ function lancer(W,opts){
   const exo=i=>{const e=ex[i];return e?(opts.mv(e.m)||{nom:e.m}):null};
   const verLib=x=>x<0?'version −':x>0?'version +':'version normale';
   function exoHTML(i,petit){const e=ex[i],m=exo(i);if(!m)return '';
-    return `<div class="ch-exo${petit?' petit':''}"><div class="ch-img">${opts.visuel(m)}</div><div><b>${esc(m.nom)}</b>${W.f==='emom'||W.f==='fortime'||W.f==='amrap'?`<span>${e.reps||''} rép.</span>`:''}<span class="ch-ver">${verLib(R.versions[i])}</span>
+    return `<div class="ch-exo${petit?' petit':''}"><div class="ch-img"${window.aVideo&&aVideo(e.m)?` data-video="${e.m}" title="Voir la vidéo"`:''}>${opts.visuel(m)}${window.aVideo&&aVideo(e.m)?'<span class="bt-video mini" aria-hidden="true">▶</span>':''}</div><div><b>${esc(m.nom)}</b>${W.f==='emom'||W.f==='fortime'||W.f==='amrap'?`<span>${e.reps||''} rép.</span>`:''}<span class="ch-ver">${verLib(R.versions[i])}</span>
       <div class="ch-reg"><button type="button" data-ch="moins" data-i="${i}" aria-label="Version plus facile">−</button><button type="button" data-ch="plusv" data-i="${i}" aria-label="Version plus difficile">+</button></div></div></div>`}
   function peindre(){
     if(fini)return;
