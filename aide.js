@@ -8,9 +8,9 @@ window.EPS_AIDE={appli:'Cross training · Élève',bouton:false,publics:[
 </ol><p class="astuce">Aux cours suivants : touche le nom de ton binôme sur l’accueil, puis le code.</p>`},
 {t:'Pendant la séance',html:`<ul><li>La séance du jour s’ouvre toute seule (n° 1 à 9 en haut pour en changer). Le haut de l’écran rappelle ce qui est prévu.</li>
 <li>En haut, <b>« Qui saisit ? »</b> : touche le prénom de celui qui travaille. Chacun a son carnet.</li>
-<li><span class="bouton">+ Ajouter un WOD</span> : choisis le format (les formats de l’épreuve sont en premier), puis les exercices, leurs répétitions et leur version (−, =, +).</li>
+<li><span class="bouton">+ Ajouter un WOD</span> : choisis le format (les formats de l’épreuve sont en premier), puis les exercices, leurs répétitions et leur version (−, =, +). Pendant que tu construis, l’encadré gris vérifie les règles de l’épreuve pour ton mobile : nombre d’exercices, niveau, 7 répétitions en EMOM modéré, zones couvertes dans la séance.</li>
 <li><span class="bouton">▶ Lancer le chrono</span> : le partenaire tient la tablette. Il touche <b>+1</b> à chaque répétition, <b>No rep</b> si le mouvement n’est pas complet, <b>Fini !</b> à l’EMOM, et <b>−</b> / <b>+</b> pour noter une régulation.</li>
-<li>À la fin : la <b>FC</b> (pouls 15 s × 4, tout de suite), ton <b>effort perçu de 1 à 10</b> et <b>ta décision pour le prochain WOD</b> (je baisse, je garde, je monte, j’allonge la récup). L’appli conseille une décision d’après ta FC et ton effort ; au WOD suivant, elle te la rappelle.</li>
+<li>À la fin : la <b>FC</b> (pouls 15 s × 4, tout de suite), ton <b>effort perçu de 1 à 10</b> et <b>ta décision pour le prochain WOD</b> (je baisse, je garde, je monte, j’allonge la récup). L’appli conseille une décision d’après ta FC et ton effort ; au WOD suivant, elle te la rappelle, puis vérifie si tu l’as appliquée (✓ appliquée ou ✗ pas appliquée).</li>
 <li>Le <b>coach</b> (celui qui a regardé et compté) est noté avec le WOD : c’est la preuve de son rôle.</li>
 <li><b>Saisie complète</b> (si le professeur l’a choisie) : en plus, les 3 critères après chaque exercice, où tu l’as senti (muscles, souffle, tête), le conseil du coach et un commentaire, puis l’étoile et la fatigue de la séance.</li></ul>`},
 {t:'Mon tableau, le jour J',html:`<ul><li><b>Mon tableau</b> : âge, FC de repos, mobile et pourquoi, charges.</li>
@@ -28,10 +28,12 @@ window.EPS_AIDE={appli:'Cross training · Élève',bouton:false,publics:[
 <li><b>Tablette en veille ou page rechargée</b> : rouvre le carnet, un bandeau propose <b>Reprendre</b> ; le chrono compte le temps passé.</li>
 <li><b>Binôme</b> : après chaque WOD, « À qui le tour ? » passe au partenaire, qui devient le coach.</li></ul>`},
 {t:'Démonstration',html:`<p>Sur l’écran d’accueil (bouton « Changer » si un carnet est ouvert), carte <b>Démonstration → Ouvrir la démo</b> : un binôme fictif « Alice · Bruno », code 0000, pour essayer sans classe.</p>`},
-{t:'Envoyer en fin de séance',html:`<ol><li>Onglet <b>Envoyer</b> : montre les <b>QR codes</b> au professeur (un par élève), ou <span class="bouton">Envoyer ma séance du jour en ligne</span> quand le professeur l’a activé.</li>
+{t:'Mes progrès',html:`<p>Onglet <b>Progrès</b> : le tableau de toutes tes séances, la <b>courbe de ta FC</b> (la bande verte est la fourchette de ton mobile ; point plein = dedans, rond vide = dehors), ton <b>AMRAP test</b> séance 1 contre séance 7 et, en Terminale, ton <b>tonnage</b> (charge × répétitions).</p>`},
+{t:'Envoyer en fin de séance',html:`<ol><li>Onglet <b>Envoyer</b> : montre les <b>QR codes</b> au professeur (un par élève ; une séance très chargée est coupée en 2 ou 3 QR, « partie 1/2 »… : montre-les tous), ou <span class="bouton">Envoyer ma séance du jour en ligne</span> quand le professeur l’a activé.</li>
+<li>Ensuite, une <b>sauvegarde chiffrée</b> du carnet part dans Téléchargements (réglable dans Mon binôme). Si la tablette est vidée : Mon binôme → « Reprendre un carnet », puis votre code.</li>
 <li>Un bandeau rouge « Séance non envoyée » reste tant que ce n’est pas fait.</li></ol>`},
 {t:'Code oublié, changer de tablette',html:`<ul><li><b>Code oublié</b> : le carnet ne s’ouvre plus. Supprimez-le et créez un nouveau binôme ; vos séances déjà envoyées sont chez le professeur.</li>
-<li><b>Changer de tablette</b> : Mon binôme → « Enregistrer le carnet », puis « Reprendre un carnet » sur l’autre tablette.</li>
+<li><b>Changer de tablette</b> : Mon binôme → « Enregistrer le carnet », puis « Reprendre un carnet » sur l’autre tablette, et votre code. Le fichier est chiffré : sans le code, personne ne peut le lire.</li>
 <li>Le carnet se verrouille après 10 min sans activité (jamais pendant un chrono).</li></ul>`}]},
 {id:'prof',titre:'Professeur',chapitres:[
 {t:'Mettre en place',html:`<ol><li>Outil prof (cross-training-prof) → <b>Classes</b> : import Pronote, niveau (1re ou Tle), démarche (progressive ou GAREEPS), lien de dépôt du Nuage (facultatif).</li>

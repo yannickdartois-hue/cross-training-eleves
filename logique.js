@@ -100,6 +100,19 @@ function score(W){const r=W.res||{};
     return ''}
   return ''}
 
+// Répétitions réellement faites, exercice par exercice (pour le tonnage : charge × répétitions)
+function repsFaites(W){const ex=W.ex||[],r=W.res||{},n=ex.length,R=ex.map(()=>0);if(!n||!W.fait)return R;
+  if(W.f==='tabata')(r.rounds||[]).forEach((x,i)=>{R[exoDuRound(W,i)]+=x||0});
+  else if(W.f==='amrap'&&r.tours!=null)ex.forEach((e,k)=>{R[k]=(e.reps||0)*r.tours+(r.amIdx&&k<r.amIdx?(e.reps||0):0)});
+  else if((W.f==='emom'||W.f==='emom1')&&r.minutes)r.minutes.forEach((m,i)=>{if(!m)return;ex.forEach((e,k)=>{const rp=(e.reps||(W.p&&W.p.dep)||0)+(W.f==='emom1'?i:0);
+    R[k]+=m.ok?rp:k<(m.stop||0)?rp:k===(m.stop||0)?(m.partiel||0):0})});
+  else if(W.f==='fortime'){const pal=W.p&&W.p.pal,nb=pal?pal.length:(W.p&&W.p.tours)||3,f=r.temps&&(r.tours==null||r.tours>=nb)?nb:(r.tours||0);
+    ex.forEach((e,k)=>{R[k]=pal?pal.slice(0,f).reduce((a,x)=>a+x,0):(e.reps||0)*f})}
+  return R}
+const tonnage=W=>repsFaites(W).reduce((a,x,k)=>a+x*((W.ex[k]&&W.ex[k].kg)||0),0);
+// Valeur numérique d'un AMRAP (tours + fraction de tour) pour comparer deux tests
+function valeurAmrap(W){const r=W&&W.res;if(!r||r.tours==null)return null;const n=(W.ex||[]).length||1;return r.tours+(r.amIdx||0)/n}
+
 /* ---------- Contrôle du projet de l'épreuve (référentiel) ---------- */
 function controleEpreuve(wods,mob,MOUV){
   const W=(wods||[]).filter(w=>w.ex&&w.ex.length),L=[],ids=new Set(),zones=new Set();
@@ -109,7 +122,7 @@ function controleEpreuve(wods,mob,MOUV){
     L.push([ta.length===1&&em.length===1,'1 TABATA et 1 EMOM ('+ta.length+' TABATA, '+em.length+' EMOM)']);
     L.push([ids.size>=6&&ids.size<=8,'6 à 8 exercices différents ('+ids.size+')']);
     L.push([zones.size===4,'les 4 zones : INF, SUP, TRONC, CARDIO ('+[...zones].join(', ')+')']);
-    L.push([em.every(w=>(w.reps||7)>=7),'EMOM : 7 répétitions minimum']);
+    L.push([em.every(w=>w.ex.every(e=>(e.reps||0)>=7)),'EMOM : 7 répétitions minimum']);
   }else if(mob==='elev'){
     L.push([ta.length===2&&em.length===1,'2 TABATA et 1 EMOM ('+ta.length+' TABATA, '+em.length+' EMOM)']);
     L.push([ta.some(w=>w.special),'un des TABATA est « le spécial » (une seule zone)']);
@@ -120,6 +133,50 @@ function controleEpreuve(wods,mob,MOUV){
   const sp=ta.find(w=>w.special);
   if(sp){const z=new Set(sp.ex.map(e=>{const m=MOUV.find(x=>x.id===e.m);return m&&m.z}));L.push([z.size===1,'le spécial n’a qu’une zone ('+[...z].join(', ')+')'])}
   return L;
+}
+
+// Règles du référentiel vérifiées pendant la construction d'un WOD (éditeur) : [ok (true/false/null = info), texte]
+function controleWod(W,autres,mob,MOUV){
+  const mv=id=>MOUV.find(x=>x.id===id)||{},ex=W.ex||[],n=ex.length,L=[],ZN=['INF','SUP','TRONC','CARDIO'];
+  if(!mob){L.push([null,'Choisis ton mobile (Mon tableau) pour voir les règles de l’épreuve.']);}
+  const niv=ex.map(e=>mv(e.m).n||0),zs=new Set(ex.map(e=>mv(e.m).z).filter(Boolean));
+  if(mob&&W.f==='emom'){
+    L.push([n>=3&&n<=4,'EMOM : 3 à 4 exercices ('+n+')']);
+    const v=mob==='mod'?2:3,bas=niv.filter(x=>x<v).length;L.push([n>0&&bas===0,'EMOM '+(mob==='mod'?'modéré':'élevé')+' : exercices de niveau '+v+(mob==='mod'?' (ou plus)':'')+(bas?' · '+bas+' en dessous':'')]);
+    if(mob==='mod')L.push([n>0&&ex.every(e=>(e.reps||0)>=7),'EMOM modéré : 7 répétitions minimum par exercice']);
+  }
+  if(mob&&W.f==='tabata'){
+    if(mob==='mod')L.push([n>=4&&n<=5,'TABATA modéré : 4 à 5 exercices ('+n+')']);
+    else{const b3=niv.filter(x=>x<3).length;L.push([n>0&&b3<=1,'Intensité élevée : il faut du niveau 3'+(b3?' ('+b3+' exercice'+(b3>1?'s':'')+' en dessous, 1 N2 toléré)':'')])}
+    if(W.special)L.push([zs.size===1,'Le spécial : une seule zone ('+([...zs].join(', ')||'aucune')+')']);
+  }
+  if(n&&!(W.f==='tabata'&&W.special)){
+    const tous=new Set();(autres||[]).concat([W]).forEach(w=>(w.ex||[]).forEach(e=>{const z=mv(e.m).z;if(z)tous.add(z)}));
+    const manq=ZN.filter(z=>!tous.has(z));
+    if(n)L.push([manq.length?null:true,manq.length?'Zones de la séance : il manque '+manq.join(', '):'Les 4 zones sont couvertes dans la séance']);
+  }
+  if(mob&&n){const ids=new Set();(autres||[]).concat([W]).forEach(w=>(w.ex||[]).forEach(e=>ids.add(e.m)));const [a,b]=mob==='mod'?[6,8]:[8,10];
+    L.push([ids.size>=a&&ids.size<=b?true:null,'Exercices différents dans la séance : '+ids.size+' (épreuve : '+a+' à '+b+')'])}
+  return L;
+}
+
+// La décision prise au WOD précédent a-t-elle été appliquée au WOD suivant ? 'oui' | 'non' | null (pas comparable)
+function niveauMoyen(W,MOUV){const ex=W.ex||[];if(!ex.length)return null;return ex.reduce((a,e)=>a+((MOUV.find(x=>x.id===e.m)||{}).n||2)+(e.v||0),0)/ex.length}
+function repsMoyen(W){const ex=(W.ex||[]).filter(e=>e.reps);return ex.length?ex.reduce((a,e)=>a+e.reps,0)/ex.length:null}
+function decisionAppliquee(prev,cur,MOUV){
+  if(!prev||!cur||!prev.regle)return null;
+  const dn=niveauMoyen(cur,MOUV)-niveauMoyen(prev,MOUV),meme=prev.f===cur.f,dr=meme&&repsMoyen(prev)!=null&&repsMoyen(cur)!=null?repsMoyen(cur)-repsMoyen(prev):0;
+  const pr=prev.p||{},cp=cur.p||{};
+  if(isNaN(dn))return null;
+  switch(prev.regle){
+    case 'baisse':return dn<-0.01||dr<-0.5?'oui':'non';
+    case 'monte':return dn>0.01||dr>0.5?'oui':'non';
+    case 'garde':return Math.abs(dn)<0.01&&Math.abs(dr)<=1?'oui':'non';
+    case 'recup':if(meme&&cur.f==='tabata')return (cp.r||0)>(pr.r||0)||(cp.e||0)<(pr.e||0)?'oui':'non';
+      if(meme&&(cur.f==='emom'||cur.f==='emom1'))return dr<-0.5||dn<-0.01?'oui':'non';
+      return null;
+  }
+  return null;
 }
 
 /* ---------- Noms de fichiers ---------- */
@@ -136,7 +193,7 @@ const FCODE={tabata:'t',emom:'e',amrap:'a',fortime:'f',emom1:'p'},FDECODE={t:'ta
 function versQR(o){
   const q={a:'CTE',v:1,c:o.classe,e:o.eleve,s:o.seance,d:o.date,ts:Math.round(Date.now()/1000),k:o.parcours||''};
   if(o.mobile)q.m=o.mobile;if(o.dispense)q.dp=1;
-  q.w=(o.wods||[]).map(w=>[FCODE[w.format]||w.format,w.p,w.ordre==='h'?1:0,(w.exercices||[]).map(e=>[e.id,e.version||0,e.reps||0,e.noteExecution||0,e.charge||0,critCode(e.criteres&&[e.criteres.placement,e.criteres.respiration,e.criteres.amplitude])]),w.fait?1:0,w.res||0,w.fc||0,w.ressenti||0,w.regulations||0,w.noRep||0,w.special?1:0,w.preset||'',w.echelleRessenti||0,cut(w.commentaire,80),w.dimensions?[w.dimensions.mu||0,w.dimensions.so||0,w.dimensions.te||0]:0,w.regulation||'',cut(w.coach,40),cut(w.conseil,80)]);
+  q.w=(o.wods||[]).map(w=>[FCODE[w.format]||w.format,w.p,w.ordre==='h'?1:0,(w.exercices||[]).map(e=>[e.id,e.version||0,e.reps||0,e.noteExecution||0,e.charge||0,critCode(e.criteres&&[e.criteres.placement,e.criteres.respiration,e.criteres.amplitude])]),w.fait?1:0,w.res||0,w.fc||0,w.ressenti||0,w.regulations||0,w.noRep||0,w.special?1:0,w.preset||'',w.echelleRessenti||0,cut(w.commentaire,80),w.dimensions?[w.dimensions.mu||0,w.dimensions.so||0,w.dimensions.te||0]:0,w.regulation||'',cut(w.coach,40),cut(w.conseil,80),w.suiviDecision?[w.suiviDecision.decision,w.suiviDecision.resultat==='oui'?1:w.suiviDecision.resultat==='non'?2:3]:0]);
   if(o.preuvesRoles&&o.preuvesRoles.wods)q.pr=[o.preuvesRoles.wods,(o.preuvesRoles.conseils||[]).slice(-2).map(x=>cut(x,50))];
   if(o.ressentiSeance)q.rs=[o.ressentiSeance.etoiles||0,o.ressentiSeance.fatigue||0];
   if(o.etoile)q.et=[o.etoile.conception||0,o.etoile.production||0,o.etoile.analyse||0];
@@ -152,7 +209,7 @@ function versQR(o){
 // Objet compact du QR → même forme que le fichier (pour l'outil prof)
 function depuisQR(q){
   const o={app:'cross-training-eleves',classe:q.c,eleve:q.e,seance:q.s,date:q.d,ts:q.ts,parcours:q.k||'',mobile:q.m||'',dispense:!!q.dp,source:'qr',
-    wods:(q.w||[]).map(a=>({format:FDECODE[a[0]]||a[0],p:a[1],ordre:a[2]?'h':'v',exercices:(a[3]||[]).map(e=>{const c=critDecode(e[5]||0);return {id:e[0],version:e[1],reps:e[2],noteExecution:e[3]||null,charge:e[4]||null,criteres:c?{placement:c[0],respiration:c[1],amplitude:c[2]}:null}}),fait:!!a[4],res:a[5]||null,fc:a[6]||null,ressenti:a[7]||null,regulations:a[8]||0,noRep:a[9]||0,special:!!a[10],preset:a[11]||'',echelleRessenti:a[12]||(a[7]?4:0),echelleNote:(a[12]===5||a[12]===10||!a[7])?4:5,commentaire:a[13]||'',dimensions:a[14]?{mu:a[14][0]||null,so:a[14][1]||null,te:a[14][2]||null}:null,regulation:a[15]||'',coach:a[16]||'',conseil:a[17]||''})),
+    wods:(q.w||[]).map(a=>({format:FDECODE[a[0]]||a[0],p:a[1],ordre:a[2]?'h':'v',exercices:(a[3]||[]).map(e=>{const c=critDecode(e[5]||0);return {id:e[0],version:e[1],reps:e[2],noteExecution:e[3]||null,charge:e[4]||null,criteres:c?{placement:c[0],respiration:c[1],amplitude:c[2]}:null}}),fait:!!a[4],res:a[5]||null,fc:a[6]||null,ressenti:a[7]||null,regulations:a[8]||0,noRep:a[9]||0,special:!!a[10],preset:a[11]||'',echelleRessenti:a[12]||(a[7]?4:0),echelleNote:(a[12]===5||a[12]===10||!a[7])?4:5,commentaire:a[13]||'',dimensions:a[14]?{mu:a[14][0]||null,so:a[14][1]||null,te:a[14][2]||null}:null,regulation:a[15]||'',coach:a[16]||'',conseil:a[17]||'',suiviDecision:a[18]?{decision:a[18][0],resultat:a[18][1]===1?'oui':a[18][1]===2?'non':null}:null})),
     preuvesRoles:q.pr?{wods:q.pr[0],conseils:q.pr[1]||[]}:null,
     ressentiSeance:q.rs?{etoiles:q.rs[0]||null,fatigue:q.rs[1]||null}:null,
     etoile:q.et?{conception:q.et[0],production:q.et[1],analyse:q.et[2]}:null,axePrioritaire:q.ax||'',bilan:q.b||'',suite:q.su||'',etirements:!!q.st,
@@ -168,10 +225,26 @@ async function chaineQR(q){
   return 'CTE0:'+b64url(raw);
 }
 
+// QR trop chargé : découpé en plusieurs QR (« partie 1/2 »…), recollés par l'outil prof.
+// La 1re partie porte toute la séance sauf une partie des WOD ; les suivantes, l'en-tête minimal et les autres WOD.
+const SEUIL_QR=560;
+async function partiesQR(q){
+  const t=await chaineQR(q);if(t.length<=SEUIL_QR||!(q.w&&q.w.length>1))return [t];
+  const W=q.w,tete={a:q.a,v:q.v,c:q.c,e:q.e,s:q.s,d:q.d,ts:q.ts},P=[];let i=0;
+  while(i<W.length){const base=P.length?Object.assign({},tete):Object.assign({},q);base.w=[W[i]];i++;
+    while(i<W.length){const essai=Object.assign({},base,{w:base.w.concat([W[i]]),pt:[0,9]});if((await chaineQR(essai)).length>SEUIL_QR)break;base.w.push(W[i]);i++}
+    P.push(base)}
+  if(P.length===1)return [t];
+  return Promise.all(P.map((x,k)=>chaineQR(Object.assign(x,{pt:[k+1,P.length]}))));
+}
+// Recolle les parties (même élève, même séance, même ts) ; renvoie l'objet complet ou null s'il en manque
+function recollerQR(parts){const n=parts[0].pt[1],L=[];parts.forEach(p=>L[p.pt[0]-1]=p);
+  if(L.filter(Boolean).length<n)return null;const q=Object.assign({},L[0]);delete q.pt;q.w=[].concat(...L.map(p=>p.w||[]));return q}
+
 function decrireWod(w,MOUV){
   const W={f:w.format||w.f,p:w.p||{}},ps=PRESETS.find(x=>x.id===w.preset);
   const ex=(w.exercices||[]).map(e=>{const m=MOUV.find(x=>x.id===e.id)||{};return {nom:e.nom||m.nom||e.id,zone:e.zone||m.z||'',niveau:e.niveau||m.n||null,version:e.version||0,reps:e.reps||0,note:e.noteExecution||null,charge:e.charge||null}});
   return {titre:titreWod(W),format:ps?ps.nom:'',duree:dureeS(W),ex};
 }
-root.CTL={RPE10,REGLE,CRIT3,critCode,critDecode,maxExercices,NOTE4,RESS5,ETOILES,FATIGUE,ressentiTxt,NIV_REPS,TABATA_REGLAGES,somme,decrireWod,VERSION_DONNEES,parcours,NOM_NIV,NOM_DEM,PRESETS,NOM_F,dureeS,mmss,titreWod,exoDuRound,FOURCHETTE,fcDans,niveauEmom,regularite,score,controleEpreuve,slug,nomFichier,versQR,depuisQR,chaineQR};
+root.CTL={repsFaites,tonnage,valeurAmrap,decisionAppliquee,controleWod,SEUIL_QR,partiesQR,recollerQR,RPE10,REGLE,CRIT3,critCode,critDecode,maxExercices,NOTE4,RESS5,ETOILES,FATIGUE,ressentiTxt,NIV_REPS,TABATA_REGLAGES,somme,decrireWod,VERSION_DONNEES,parcours,NOM_NIV,NOM_DEM,PRESETS,NOM_F,dureeS,mmss,titreWod,exoDuRound,FOURCHETTE,fcDans,niveauEmom,regularite,score,controleEpreuve,slug,nomFichier,versQR,depuisQR,chaineQR};
 })(typeof window!=='undefined'?window:globalThis);

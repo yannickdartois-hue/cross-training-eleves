@@ -28,3 +28,7 @@ Fichiers : `CT_1G3_MartinL_S4.json`. QR : `CTE1:` + JSON compact compressé (`lo
 - Tout le chrono et le mode prof de l’appli d’origine ont été repris le 31/10/2026 : voir ORIGINE-cross-training-pompidou.md.
 - FOR TIME à paliers dégressifs : N1 6→1 (21 rép.), N2 8→1 (36), N3 10→1 (55), sans limite de temps ou avec cap de 6 à 15 min. Le « FOR TIME 3 tours » reste disponible.
 - Son / vibreur / muet dans le chrono, avec la même clé `eps_sound_mode` que l'ancienne appli : le réglage est conservé.
+
+## Tests
+
+Scripts dans `tests/` (Node + Playwright), à relancer avant chaque mise en ligne : voir `tests/README.md`.

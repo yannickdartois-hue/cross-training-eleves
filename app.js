@@ -162,7 +162,9 @@ function vGroupe(){
    :`<div class="carte"><h3>Scanner le QR de la classe</h3><p class="small muted">Le professeur l’affiche au premier cours : il donne la classe, la liste des élèves, le niveau et la démarche du cycle.</p>
       <button class="bt orange" type="button" data-act="qrclasse">Scanner le QR de la classe</button></div>`}
   <div class="carte"><h3>Changer de tablette</h3>
-    <p class="small muted">Le carnet est gardé sur cette tablette. Pour continuer sur une autre, enregistre-le ici, puis reprends-le là-bas.</p>
+    <p class="small muted">Le carnet est gardé sur cette tablette. Pour continuer sur une autre, ou si la tablette est vidée, enregistre-le ici, puis reprends-le là-bas : il faudra le même code secret. Le fichier est chiffré.</p>
+    <label class="coche"><input type="checkbox" data-ch="sauvauto" ${sauvAuto()?'checked':''}> Sauvegarde automatique en fin de séance (après le QR ou l’envoi)</label>
+    ${S.sauve?`<p class="small muted">Dernière sauvegarde : ${new Date(S.sauve).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}</p>`:''}
     <div class="rangee"><button class="bt mini" type="button" data-act="sauvegarde">Enregistrer le carnet</button>
     <label class="bt mini" for="reprise">Reprendre un carnet</label><input id="reprise" type="file" accept=".json,application/json" hidden></div></div>
   <div class="carte"><button class="bt mini danger" type="button" data-act="toutEffacer">Supprimer ce binôme de la tablette</button></div>
@@ -181,11 +183,12 @@ const complet=()=>{const r=S&&S.classe&&ROOT.classes&&ROOT.classes[S.classe];ret
 const critTxt=e=>e.crit&&e.crit.some(x=>x===0||x===1)?CT_CRIT.map((c,k)=>(e.crit[k]===1?'✓':e.crit[k]===0?'✗':'?')+c.slice(0,4)+'.').join(' '):'';
 const pastFC=(fc,mob)=>{const d=CTL.fcDans(fc,mob);return fc?`<span class="fc ${d==null?'':d===0?'dans':d<0?'sous':'dessus'}">${fc}${d==null?'':d===0?' ✓':d<0?' ↓':' ↑'}</span>`:'<span class="muted">—</span>'};
 function carteWod(W,i,mob){
+  const sd=W.fait?suiviDecision(elv().id,S.seance,i):null;
   const ex=(W.ex||[]).map(e=>{const m=mvById(e.m)||{nom:e.m};return `<span class="wx">${esc(m.nom)}${boutonVideo(e.m,'mini')}${e.reps&&W.f!=='tabata'?' × '+e.reps+(W.f==='emom1'?' (+1/min)':''):''}${e.v?`<em>${e.v<0?'−':'+'}</em>`:''}${e.kg?` <small>${e.kg} kg</small>`:''}${W.fait&&e.note?` <small>exéc. ${e.note}/${W.ress5||W.rpe||!W.ress?4:5} ${W.ress5||W.rpe||!W.ress?CTL.NOTE4[e.note]||'':''}</small>`:''}${W.fait&&critTxt(e)?` <small class="muted">${critTxt(e)}</small>`:''}</span>`}).join('');
   const sc=W.fait?CTL.score(W):'';
   return `<article class="wod${W.fait?' fait':''}"><header><b>${esc(CTL.titreWod(W))}</b>${W.special?'<span class="pill">spécial</span>':''}<span class="pill">${W.fait?'fait':'prévu'}</span></header>
     <div class="wxs">${ex||'<span class="muted small">aucun exercice</span>'}</div>
-    ${W.fait?`<p class="small">${esc(sc)} · FC ${pastFC(W.fc,mob)} · ressenti ${esc(ressW(W))}${W.regul?' · '+W.regul+' régulation'+(W.regul>1?'s':''):''}${W.norep?' · '+W.norep+' no rep':''}</p>${W.regle?`<p class="small">Décision : <b>${esc(CTL.REGLE[W.regle]||W.regle)}</b>${W.coach?' · coach '+esc(prenom(W.coach)):''}${W.conseil?' : « '+esc(W.conseil)+' »':''}</p>`:''}${W.com?`<p class="small muted">« ${esc(W.com)} »</p>`:''}`:''}
+    ${W.fait?`<p class="small">${esc(sc)} · FC ${pastFC(W.fc,mob)} · ressenti ${esc(ressW(W))}${W.regul?' · '+W.regul+' régulation'+(W.regul>1?'s':''):''}${W.norep?' · '+W.norep+' no rep':''}</p>${W.regle?`<p class="small">Décision : <b>${esc(CTL.REGLE[W.regle]||W.regle)}</b>${W.coach?' · coach '+esc(prenom(W.coach)):''}${W.conseil?' : « '+esc(W.conseil)+' »':''}</p>`:''}${W.com?`<p class="small muted">« ${esc(W.com)} »</p>`:''}${sd?`<p class="small ${sd.resultat==='oui'?'ok':sd.resultat==='non'?'avert':'muted'}">Décision d’avant (« ${esc(CTL.REGLE[sd.decision]||sd.decision)} ») : ${sd.resultat==='oui'?'✓ appliquée':sd.resultat==='non'?'✗ pas appliquée':'formats différents, à vérifier toi-même'}</p>`:''}`:''}
     <div class="rangee">${(W.ex||[]).length?`<button class="bt ${W.fait?'mini':'orange'}" type="button" data-act="go" data-i="${i}">${W.fait?'Refaire':'▶ Lancer le chrono'}</button>`:''}<button class="bt mini" type="button" data-act="wmod" data-i="${i}">Modifier</button><button class="bt mini danger" type="button" data-act="wdel" data-i="${i}">Supprimer</button></div></article>`;
 }
 function vSeance(){
@@ -242,6 +245,8 @@ function peindreEditeur(){
   const dur=CTL.dureeS(W),mx=CTL.maxExercices(W),plein=W.ex.length>=mx,trop=W.ex.length>mx,pris=new Set(W.ex.map(e=>e.m));
   fen(`<h3>${esc(CTL.titreWod(W))}${W.special?' · spécial':''}</h3><p class="small muted">${esc(ps.aide||'')}${dur&&/min/.test(ps.aide||'')&&!ps.libre?'':' · '+(dur?esc(CTL.mmss(dur)):'sans limite de temps')}</p>
     <p class="nbex${trop?' avert':''}"><b>${W.ex.length} / ${mx} exercice${mx>1?'s':''}</b>${ps.nb&&ps.nb<mx?' · '+ps.nb+' conseillé'+(ps.nb>1?'s':''):''}${trop?' · trop d’exercices : retire-en '+(W.ex.length-mx)+' pour enregistrer':plein?' · maximum atteint':''}</p>
+    ${(()=>{const E=elv(),r=rec(E.id,S.seance,false),aut=r?r.wods.filter((w,k)=>k!==ED.i):[],C=CTL.controleWod(W,aut,mobileDe(E.id,S.seance),MOUV);
+      return C.length?`<ul class="ctrl live">${C.map(c=>`<li class="${c[0]===true?'ok':c[0]===false?'ko':'info'}">${c[0]===true?'✓':c[0]===false?'⚠':'•'} ${esc(c[1])}</li>`).join('')}</ul>`:''})()}
     ${W.f==='tabata'?`<div class="rangee"><span class="small">Ordre</span><button type="button" class="bt mini ${W.ordre!=='h'?'noir':''}" data-act="ordre" data-v="v">Vertical 1-2-3-4-1…</button><button type="button" class="bt mini ${W.ordre==='h'?'noir':''}" data-act="ordre" data-v="h">Horizontal 1-1-2-2…</button></div>`:''}
     ${W.f==='tabata'&&ps.libre?`<div class="rangee"><span class="small">Effort / repos</span>${CTL.TABATA_REGLAGES.map(([e,r])=>`<button type="button" class="bt mini ${W.p.e===e&&W.p.r===r?'noir':''}" data-act="etr" data-v="${e}/${r}">${e}/${r}</button>`).join('')}</div>
     <div class="rangee"><span class="small">Cycles</span><button type="button" class="bt mini" data-act="ecyc" data-v="-1" aria-label="Un cycle de moins">−</button><b>${W.p.n}</b><button type="button" class="bt mini" data-act="ecyc" data-v="1" aria-label="Un cycle de plus">+</button>${W.ordre==='h'&&W.ex.length>1&&W.p.n%W.ex.length?`<span class="small avert">En horizontal, prends un nombre de cycles divisible par ${W.ex.length} (${W.ex.length} exercices).</span>`:''}</div>`:''}
@@ -301,8 +306,33 @@ function vProgres(){
   const et=[2,5,8].map(n=>{const r=rec(E.id,n,false);return r&&r.etoile?GAREEPS.axes.map(a=>(r.etoile[a.id]||[]).length):null});
   return `<h2>Mes progrès · ${esc(prenom(E.nom))}</h2><div class="defile"><table class="prog"><tr><th></th><th>WOD</th><th>Résultat</th><th>FC</th><th>Effort / ressenti</th></tr>${lignes}</table></div>
     <p class="small muted">FC : ✓ dans la fourchette de ton mobile, ↓ en dessous, ↑ au-dessus.</p>
+    ${graphesProgres(E)}
     ${estG()?`<section class="carte"><h3>Mes étoiles</h3><div class="etoiles">${et.map((v,i)=>`<div><b>SCE ${i+1} · S${[2,5,8][i]}</b>${v?svgEtoile(v.map(x=>Math.max(x,0.05))):'<p class="muted small">pas encore</p>'}</div>`).join('')}</div></section>`:''}`;
 }
+
+/* ----- Courbes de progrès (SVG en ligne, couleurs du thème) ----- */
+function courbeFC(E){
+  const T=tab(E.id),P=[];for(let n=1;n<=NB_SEANCES;n++){const r=rec(E.id,n,false);if(!r)continue;const mob=r.mobile||T.mobile;r.wods.forEach(w=>{if(w.fait&&+w.fc)P.push({n,fc:+w.fc,mob,t:CTL.titreWod(w)})})}
+  if(P.length<2)return '<p class="muted small">La courbe apparaît à partir de 2 WOD avec une FC notée.</p>';
+  const L=600,H=220,g=38,d=16,y0=100,y1=210,X=i=>g+12+(L-g-d-24)*(P.length===1?0.5:i/(P.length-1)),Y=v=>d+(H-d-26)*(1-(Math.max(y0,Math.min(y1,v))-y0)/(y1-y0));
+  const mob=T.mobile||P[P.length-1].mob,F=mob&&CTL.FOURCHETTE[mob];
+  const bande=F?`<rect x="${g}" y="${Y(F[1])}" width="${L-g-d}" height="${Y(F[0])-Y(F[1])}" class="cb-bande"/><text x="${g+6}" y="${Y(F[1])-5}" class="cb-t">fourchette de ton mobile : ${F[0]}–${F[1]}</text>`:'';
+  const grille=[120,140,160,180,200].map(v=>`<line x1="${g}" x2="${L-d}" y1="${Y(v)}" y2="${Y(v)}" class="cb-g"/><text x="${g-6}" y="${Y(v)+4}" text-anchor="end" class="cb-t">${v}</text>`).join('');
+  let sep='',dern=0;P.forEach((p,i)=>{if(p.n!==dern){sep+=`<text x="${X(i)}" y="${H-6}" text-anchor="middle" class="cb-t">S${p.n}</text>`;dern=p.n}});
+  const pts=P.map((p,i)=>{const dd=CTL.fcDans(p.fc,p.mob);return `<g class="cb-p ${dd==null?'':dd===0?'dans':dd<0?'sous':'dessus'}"><circle cx="${X(i)}" cy="${Y(p.fc)}" r="6"/><circle cx="${X(i)}" cy="${Y(p.fc)}" r="16" class="cb-hit"><title>S${p.n} · ${esc(p.t)} · FC ${p.fc}${dd==null?'':dd===0?' (dans la fourchette)':dd<0?' (en dessous)':' (au-dessus)'}</title></circle></g>`}).join('');
+  return `<svg class="courbe" viewBox="0 0 ${L} ${H}" role="img" aria-label="FC de fin de WOD, séance après séance">${grille}${bande}<polyline class="cb-l" points="${P.map((p,i)=>X(i)+','+Y(p.fc)).join(' ')}"/>${pts}${sep}</svg>
+    <p class="small muted">Chaque point est un WOD (touche-le pour le détail) : ● plein = dans la fourchette de ton mobile, ○ = en dehors.</p>`}
+function barres(L,unite){// L = [[libellé, valeur, texte]]
+  const mx=Math.max(...L.map(x=>x[1]||0),1);
+  return `<div class="cb-barres">${L.map(([l,v,t])=>`<div class="cb-b"><span>${esc(l)}</span><span class="cb-bar"><i style="width:${v?Math.max(3,100*v/mx):0}%"></i></span><b>${v?esc(t||String(v)):'—'}</b></div>`).join('')}</div>`}
+function graphesProgres(E){
+  const am=n=>{const r=rec(E.id,n,false);return r&&r.wods.find(w=>w.f==='amrap'&&w.fait)},a1=am(1),a7=am(7),v1=CTL.valeurAmrap(a1),v7=CTL.valeurAmrap(a7);
+  let h=`<section class="carte"><h3>Ma FC séance après séance</h3>${courbeFC(E)}</section>
+  <section class="carte"><h3>Mon AMRAP test</h3>${a1||a7?barres([['Séance 1',v1,a1&&CTL.score(a1).split(' · ')[0]],['Séance 7',v7,a7&&CTL.score(a7).split(' · ')[0]]]):'<p class="muted small">Le test se fait aux séances 1 et 7.</p>'}
+    ${v1&&v7?`<p class="small"><b>${v7>=v1?'+':''}${Math.round(100*(v7-v1)/v1)} %</b> entre les deux tests${a1.p&&a7.p&&a1.p.min!==a7.p.min?' (attention : durées différentes)':''}.</p>`:''}</section>`;
+  if(estTle()){const L=[];for(let n=1;n<=NB_SEANCES;n++){const r=rec(E.id,n,false),t=r?r.wods.reduce((a,w)=>a+CTL.tonnage(w),0):0;L.push(['S'+n,Math.round(t),Math.round(t)+' kg'])}
+    h+=`<section class="carte"><h3>Mon tonnage (charge × répétitions)</h3>${L.some(x=>x[1])?barres(L):'<p class="muted small">Note la charge en kg dans tes WOD avec barre, kettlebell ou haltère.</p>'}</section>`}
+  return h}
 
 /* ----- Envoi ----- */
 function exportEleve(E,n){
@@ -313,7 +343,7 @@ function exportEleve(E,n){
     wods:r.wods.map(W=>({format:W.f,p:W.p,ordre:W.ordre||'v',special:!!W.special,preset:W.preset||'',titre:CTL.titreWod(W),
       exercices:(W.ex||[]).map(e=>{const m=mvById(e.m)||{};return {id:e.m,nom:m.nom||e.m,zone:m.z||'',niveau:m.n||null,version:e.v||0,reps:e.reps||0,charge:e.kg||null,noteExecution:e.note||null,criteres:e.crit?{placement:e.crit[0],respiration:e.crit[1],amplitude:e.crit[2]}:null}}),
       fait:!!W.fait,res:W.res||null,fc:W.fc||null,ressenti:W.rpe||W.ress5||W.ress||null,echelleRessenti:W.rpe?10:W.ress5?5:W.ress?4:0,echelleNote:W.rpe||W.ress5||!W.ress?4:5,commentaire:W.com||'',
-      dimensions:W.dims||null,regulation:W.regle||'',coach:W.coach||'',conseil:W.conseil||'',regulations:W.regul||0,noRep:W.norep||0,score:W.fait?CTL.score(W):''})),
+      dimensions:W.dims||null,regulation:W.regle||'',suiviDecision:W.fait?suiviDecision(E.id,n,r.wods.indexOf(W)):null,coach:W.coach||'',conseil:W.conseil||'',regulations:W.regul||0,noRep:W.norep||0,score:W.fait?CTL.score(W):''})),
     etoile:r.etoile?{conception:(r.etoile.conc||[]).length,production:(r.etoile.prod||[]).length,analyse:(r.etoile.ana||[]).length,criteres:r.etoile}:null,
     preuvesRoles:preuvesRoles(E,n),saisie:complet()?'complete':'legere',
     ressentiSeance:r.rs&&(r.rs.etoiles||r.rs.fatigue)?{etoiles:r.rs.etoiles||null,fatigue:r.rs.fatigue||null}:null,
@@ -351,7 +381,8 @@ function csvSeance(){const n=S.seance,q=v=>{const x=String(v==null?'':v).replace
 let QRS=null;
 function qrSvg(txt){return TTQR.svgQR(txt)}
 async function montrerQR(i){
-  if(!QRS){const F=fichiers(S.seance);QRS=[];for(const f of F){const k=S.eleves.findIndex(E=>E.nom===f.o.eleve);QRS.push({titre:'ABC'[k]+' · '+f.o.eleve,txt:await CTL.chaineQR(CTL.versQR(f.o))})}}
+  if(!QRS){const F=fichiers(S.seance);QRS=[];for(const f of F){const k=S.eleves.findIndex(E=>E.nom===f.o.eleve);const P=await CTL.partiesQR(CTL.versQR(f.o));
+    P.forEach((txt,j)=>QRS.push({titre:'ABC'[k]+' · '+f.o.eleve+(P.length>1?' · partie '+(j+1)+'/'+P.length:''),txt}))}}
   const k=Math.max(0,Math.min(i,QRS.length-1)),Q=QRS[k];
   let svg;try{svg=qrSvg(Q.txt)}catch(e){svg='<p class="avert">Trop de données pour un QR : utilise l’envoi en ligne.</p>'}
   fen(`<h3>${esc(Q.titre)} · séance ${S.seance}</h3><p class="small muted">QR ${k+1} sur ${QRS.length}</p><div class="qrbox">${svg}</div>
@@ -367,6 +398,14 @@ async function enregistrerFichiers(){
   if(!ok)for(const f of F){telecharger(f.nom,JSON.stringify(f.o,null,1));await new Promise(r=>setTimeout(r,400))}
   S.envoi[S.seance]=Object.assign(S.envoi[S.seance]||{},{fichier:Date.now()});sauver();rendre();return true;
 }
+// Sauvegarde chiffrée du carnet (même code que sur la tablette) : un fichier illisible sans le code.
+// Les noms ne sont pas dans le fichier en clair : seulement la classe et les initiales.
+async function sauvegardeChiffree(auto){
+  if(!S||!ACTIF)return;await enregistrer();const g=ROOT.groupes[ACTIF];if(!g||!g.data)return;
+  const ini=S.eleves.map(e=>String(e.nom||'').split(/\s+/).map(x=>x[0]||'').join('').toUpperCase()).join('-')||'binome';
+  telecharger('CT_carnet_'+(CTL.slug(S.classe)||'classe')+'_'+ini+'_'+today()+'.json',JSON.stringify({carnetCTc:1,id:ACTIF,classe:g.classe,noms:g.noms,sel:g.sel,iv:g.iv,data:g.data,vu:g.vu}));
+  S.sauve=Date.now();await enregistrer();if(auto)toast('Sauvegarde chiffrée du carnet enregistrée dans Téléchargements.')}
+const sauvAuto=()=>S&&S.sauvAuto!==false;
 function recevoirClasse(o){
   if(o.t!=='C')throw new Error('Ce n’est pas le QR de la classe.');
   const c={classe:o.c,eleves:o.l||[],lien:o.u||'',niv:o.n||'p',dem:o.m||'p',s:o.s||'l'};
@@ -407,6 +446,9 @@ function lancerWod(i,reprise){
     onAnnule(){rendre()}});
 }
 // Décision de régulation prise au dernier WOD fait (rappelée au départ du suivant)
+function wodDecisionAvant(id,n,i){for(let k=n;k>=1;k--){const r=rec(id,k,false);if(!r)continue;const L=r.wods.filter((w,j)=>w.fait&&w.regle&&(k<n||j<i));if(L.length)return L[L.length-1]}return null}
+function suiviDecision(id,n,i){const r=rec(id,n,false),W=r&&r.wods[i];if(!W||!W.fait)return null;const P=wodDecisionAvant(id,n,i);if(!P)return null;
+  const res=CTL.decisionAppliquee(P,W,MOUV);return {decision:P.regle,resultat:res}}
 function derniereDecision(id,n,wid){for(let k=n;k>=1;k--){const r=rec(id,k,false);if(!r)continue;const L=r.wods.filter(w=>w.fait&&w.regle);if(L.length)return CTL.REGLE[L[L.length-1].regle]||''}return ''}
 // Preuves des rôles : WOD des partenaires où cet élève était le coach (il a regardé, compté, conseillé)
 function preuvesRoles(E,n){const L=[],pour=new Set();S.eleves.forEach(A=>{if(A.id===E.id)return;const r=rec(A.id,n,false);if(r)r.wods.forEach(w=>{if(w.fait&&w.coach===E.nom){L.push(w);pour.add(A.nom)}})});
@@ -454,7 +496,7 @@ document.addEventListener('click',async ev=>{
       for(let i=0;i<3;i++){const inp=$('#g-e'+i),nom=(inp.value||'').trim().replace(/\s+/g,' ');if(nom)L.push({id:inp.dataset.id||uid(),nom})}
       if(!L.length){toast('Choisis au moins un élève.');return}
       S.eleves=L;S.cur=0;S.tab='seance';toast('Binôme enregistré.');break}
-    case 'sauvegarde':telecharger('Carnet_CT_'+(CTL.slug(S.classe)||'binome')+'_'+today()+'.json',JSON.stringify(Object.assign({carnetCT:1},S)));return;
+    case 'sauvegarde':await sauvegardeChiffree(false);rendre();return;
     case 'toutEffacer':fen(`<h3>Supprimer ce binôme ?</h3><p>Toutes ses séances seront effacées de la tablette. Envoie d’abord tes séances au professeur.</p><div class="rangee" style="justify-content:space-between"><button class="bt" type="button" data-act="fermer">Annuler</button><button class="bt danger" type="button" data-act="effacerOui">Supprimer</button></div>`);return;
     case 'effacerOui':delete ROOT.groupes[ACTIF];S=null;ACTIF=null;CLEF=null;ecrireRoot();fermer();rendre();return;
     /* WOD */
@@ -494,10 +536,10 @@ document.addEventListener('click',async ev=>{
     case 'csv':csvSeance();return;
     case 'qr':QRS=null;await montrerQR(0);return;
     case 'qrnav':await montrerQR(+v);return;
-    case 'qrfin':S.envoi[n]=Object.assign(S.envoi[n]||{},{qr:Date.now()});fermer();break;
+    case 'qrfin':S.envoi[n]=Object.assign(S.envoi[n]||{},{qr:Date.now()});fermer();if(sauvAuto())await sauvegardeChiffree(true);break;
     case 'enligne':{
       if(!lienEnvoi()){fen(`<h3>Envoi en ligne</h3><p>L’envoi en ligne n’est pas encore activé par le professeur.</p><p><b>Montre ton QR code</b> au professeur à la place.</p><div class="rangee" style="justify-content:space-between"><button class="bt" type="button" data-act="fermer">Fermer</button><button class="bt noir" type="button" data-act="qr">Montrer le QR code</button></div>`);return}
-      const ok=await enregistrerFichiers();if(!ok)return;
+      const ok=await enregistrerFichiers();if(!ok)return;if(sauvAuto())await sauvegardeChiffree(true);
       fen(`<h3>Dernière étape</h3><p>Les fichiers de la séance sont prêts. Touche « Déposer », puis choisis-les dans Téléchargements (ou Fichiers).</p><div class="rangee" style="justify-content:space-between"><button class="bt" type="button" data-act="fermer">Fermer</button><a class="bt orange" href="${esc(lienEnvoi())}" target="_blank" rel="noopener" data-act="fermer">Déposer</a></div>`);return}
     default:return;
   }
@@ -506,7 +548,12 @@ document.addEventListener('click',async ev=>{
 document.addEventListener('change',async ev=>{
   const t=ev.target;
   if(t.id==='reprise'&&t.files[0]){
-    try{const o=JSON.parse(await t.files[0].text());if(!o.carnetCT||!o.v)throw 0;delete o.carnetCT;if(o.cfg)ROOT.classes[o.cfg.classe]=o.cfg;
+    try{const o=JSON.parse(await t.files[0].text());
+      if(o.carnetCTc&&o.data&&o.sel&&o.iv){const id=o.id||uid(),x=ROOT.groupes[id];t.value='';
+        if(x&&x.data&&(x.vu||0)>=(o.vu||0)){toast('Cette tablette a déjà ce carnet, aussi récent ou plus récent : rien n’a été remplacé.');return}
+        await verrouiller();ROOT.groupes[id]={classe:o.classe||'',noms:o.noms||[],sel:o.sel,iv:o.iv,data:o.data,vu:o.vu||Date.now()};ecrireRoot();rendre();
+        toast('Carnet repris : touchez-le et tapez votre code secret.');return}
+      if(!o.carnetCT||!o.v)throw 0;delete o.carnetCT;if(o.cfg)ROOT.classes[o.cfg.classe]=o.cfg;
       await verrouiller();const id=uid();ROOT.groupes[id]={classe:o.classe||'',noms:(o.eleves||[]).map(e=>prenom(e.nom)),clair:o};ecrireRoot();rendre();toast('Carnet repris : choisissez-le et donnez-lui un code.')}
     catch(e){toast('Ce fichier n’est pas un carnet de cross training.')}
     return}
@@ -515,6 +562,7 @@ document.addEventListener('change',async ev=>{
   if(t.dataset.t){const T=tab(E.id);T[t.dataset.t]=t.value;modif();sauver();if(t.tagName==='SELECT')rendre();return}
   if(t.dataset.ed&&ED){const val=+t.value||0;if(t.dataset.ed==='reps')ED.W.ex[+t.dataset.k].reps=val;else if(t.dataset.ed==='kg'){const e=ED.W.ex[+t.dataset.k];if(val>0)e.kg=val;else delete e.kg}else if(t.dataset.ed==='min')ED.W.p.min=Math.max(1,val);else if(t.dataset.ed==='dep')ED.W.p.dep=Math.max(1,val);return}
   const c=t.dataset.ch;if(!c)return;
+  if(c==='sauvauto'){S.sauvAuto=t.checked;sauver();toast(t.checked?'Sauvegarde automatique activée.':'Sauvegarde automatique désactivée.');return}
   const r=rec(E.id,n);
   switch(c){
     case 'disp':r.disp=t.checked;break;
