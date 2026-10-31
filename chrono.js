@@ -79,11 +79,13 @@ function lancer(W,opts){
     if(W.f==='tabata'){const fait=Math.min(p.n,Math.ceil(Math.max(0,t-PREP)/(p.e+p.r)));for(let i=0;i<fait;i++)if(R.rounds[i]==null)R.rounds[i]=0}
     v.innerHTML=`<div class="chr fin"><p class="ch-titre">Terminé</p><p class="ch-sous">${esc(opts.athlete||'')} · ${esc(opts.titreWod||'')}</p>
       <div class="ch-form"><label for="ch-fc">Fréquence cardiaque (pouls 15 s × 4, tout de suite)</label><input id="ch-fc" type="number" inputmode="numeric" min="40" max="230" placeholder="ex. 152">
+      <p class="ch-lab">Note d’exécution (le partenaire) : 1 mal fait · 3 bien mais se dégrade · 5 parfait jusqu’au bout</p>
+      <div class="ch-notes">${ex.map((e,j)=>`<div class="ch-note"><span>${esc((opts.mv(e.m)||{nom:e.m}).nom)}</span><span class="ch-n5">${[1,2,3,4,5].map(x=>`<button type="button" data-ch="note" data-i="${j}" data-v="${x}">${x}</button>`).join('')}</span></div>`).join('')}</div>
       <p class="ch-lab">Ressenti</p><div class="ch-res">${[[1,'Facile'],[2,'Moyen'],[3,'Difficile'],[4,'Très difficile']].map(x=>`<button type="button" data-ch="res" data-v="${x[0]}"><b>${x[0]}</b>${x[1]}</button>`).join('')}</div>
       <div class="ch-bas"><button type="button" data-ch="annuler">Ne pas enregistrer</button><button type="button" class="ch-ok" data-ch="enreg">Enregistrer</button></div></div></div>`;
     setTimeout(()=>{const i=v.querySelector('#ch-fc');if(i)i.focus()},100);
   }
-  let ressenti=0;
+  let ressenti=0;const notes=ex.map(()=>null);
   function fermer(){clearInterval(tick);eveil(false);v.remove();document.documentElement.classList.remove('chrono-ouvert')}
   v.addEventListener('click',e=>{const b=e.target.closest('[data-ch]');if(!b)return;const a=b.dataset.ch,t=ecoule(),o=ou(t);
     if(a!=='stop')arret=false;
@@ -97,11 +99,12 @@ function lancer(W,opts){
     else if(a==='tourft'){R.tours++;if(R.tours>=(p.tours||3)){R.temps=Math.round(t-PREP);terminer();return}}
     else if(a==='pause'){if(pauseA){pauseMs+=Date.now()-pauseA;pauseA=null}else pauseA=Date.now()}
     else if(a==='stop'){if(!arret){arret=true}else{if(W.f==='amrap'||W.f==='tabata'||W.f==='emom'||W.f==='emom1'){R.arrete=Math.round(Math.max(0,t-PREP))}terminer();return}}
+    else if(a==='note'){const i=+b.dataset.i;notes[i]=+b.dataset.v;v.querySelectorAll(`[data-ch="note"][data-i="${i}"]`).forEach(x=>x.classList.toggle('on',x===b));return}
     else if(a==='res'){ressenti=+b.dataset.v;v.querySelectorAll('[data-ch="res"]').forEach(x=>x.classList.toggle('on',x===b));return}
     else if(a==='annuler'){fermer();opts.onAnnule&&opts.onAnnule();return}
     else if(a==='enreg'){const fc=+(v.querySelector('#ch-fc').value||0)||null;fermer();
       const res={rounds:R.rounds,restants:R.restants,tours:R.tours,plus:R.plus,temps:R.temps,derniere:R.derniere,arrete:R.arrete||null};
-      opts.onFin({res,fc,ressenti:ressenti||null,regulations:R.regul,noRep:R.norep,versions:R.versions});return}
+      opts.onFin({res,fc,ressenti:ressenti||null,regulations:R.regul,noRep:R.norep,versions:R.versions,notes});return}
     peindre()});
   // départ : un toucher (autorise le son sur iPad)
   v.innerHTML=`<div class="chr prep"><div class="ch-haut"><span>${esc(opts.athlete||'')}</span><span>${esc(opts.titreWod||'')}</span><span>${mmss(total-PREP)}</span></div>

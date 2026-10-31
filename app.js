@@ -177,7 +177,7 @@ function programme(n){
 }
 const pastFC=(fc,mob)=>{const d=CTL.fcDans(fc,mob);return fc?`<span class="fc ${d==null?'':d===0?'dans':d<0?'sous':'dessus'}">${fc}${d==null?'':d===0?' ✓':d<0?' ↓':' ↑'}</span>`:'<span class="muted">—</span>'};
 function carteWod(W,i,mob){
-  const ex=(W.ex||[]).map(e=>{const m=mvById(e.m)||{nom:e.m};return `<span class="wx">${esc(m.nom)}${e.reps&&W.f!=='tabata'?' × '+e.reps:''}${e.v?`<em>${e.v<0?'−':'+'}</em>`:''}</span>`}).join('');
+  const ex=(W.ex||[]).map(e=>{const m=mvById(e.m)||{nom:e.m};return `<span class="wx">${esc(m.nom)}${e.reps&&W.f!=='tabata'?' × '+e.reps:''}${e.v?`<em>${e.v<0?'−':'+'}</em>`:''}${W.fait&&e.note?` <small>exéc. ${e.note}/5</small>`:''}</span>`}).join('');
   const sc=W.fait?CTL.score(W):'';
   return `<article class="wod${W.fait?' fait':''}"><header><b>${esc(CTL.titreWod(W))}</b>${W.special?'<span class="pill">spécial</span>':''}<span class="pill">${W.fait?'fait':'prévu'}</span></header>
     <div class="wxs">${ex||'<span class="muted small">aucun exercice</span>'}</div>
@@ -238,7 +238,7 @@ function peindreEditeur(){
       <button type="button" class="x" data-act="edel" data-k="${k}" aria-label="Retirer">✕</button></li>`}).join('')||'<li class="muted small">Touche les exercices ci-dessous pour les ajouter.</li>'}</ol>
     ${W.f==='emom1'?`<div class="rangee"><label class="small" for="ed-dep">Répétitions à la 1re minute</label><input id="ed-dep" class="num" type="number" min="1" max="15" value="${W.p.dep||3}" data-ed="dep"></div>`:''}
     <div class="zones">${[['','Toutes']].concat(Object.keys(ZONES).map(z=>[z,ZONES[z].nom])).map(z=>`<button type="button" class="${ED.zone===z[0]?'on':''}" data-act="ezone" data-v="${z[0]}">${esc(z[1])}</button>`).join('')}</div>
-    <div class="mvs">${L.map(m=>`<button type="button" class="mvb" data-act="eadd" data-v="${m.id}"><span class="mv-v">${mvVisuel(m)}</span><b>${esc(m.nom)}</b><small>${m.z} · N${m.n}${m.m!=='pdc'?' · '+MATERIEL[m.m].court:''}</small></button>`).join('')}</div>
+    <div class="mvs">${L.map(m=>`<button type="button" class="mvb" data-act="eadd" data-v="${m.id}"><span class="mv-v">${mvVisuel(m)}</span><b>${esc(m.nom)}</b>${m.aussi?`<i>${esc(m.aussi)}</i>`:''}<small>${m.z} · N${m.n}${m.m!=='pdc'?' · '+MATERIEL[m.m].court:''}</small></button>`).join('')}</div>
     <div class="rangee" style="margin-top:12px;justify-content:space-between"><button class="bt" type="button" data-act="fermer">Annuler</button><button class="bt orange" type="button" data-act="esave">Enregistrer le WOD</button></div>`,'large');
 }
 
@@ -292,7 +292,7 @@ function exportEleve(E,n){
   return {app:'cross-training-eleves',version:VERSION,activite:'Cross training',classe:S.classe,eleve:E.nom,seance:n,date:r.date||today(),exportedAt:new Date().toISOString(),
     parcours:pk(),mobile:r.mobile||T.mobile||'',dispense:!!r.disp,
     wods:r.wods.map(W=>({format:W.f,p:W.p,ordre:W.ordre||'v',special:!!W.special,preset:W.preset||'',titre:CTL.titreWod(W),
-      exercices:(W.ex||[]).map(e=>{const m=mvById(e.m)||{};return {id:e.m,nom:m.nom||e.m,zone:m.z||'',niveau:m.n||null,version:e.v||0,reps:e.reps||0}}),
+      exercices:(W.ex||[]).map(e=>{const m=mvById(e.m)||{};return {id:e.m,nom:m.nom||e.m,zone:m.z||'',niveau:m.n||null,version:e.v||0,reps:e.reps||0,noteExecution:e.note||null}}),
       fait:!!W.fait,res:W.res||null,fc:W.fc||null,ressenti:W.ress||null,regulations:W.regul||0,noRep:W.norep||0,score:W.fait?CTL.score(W):''})),
     etoile:r.etoile?{conception:(r.etoile.conc||[]).length,production:(r.etoile.prod||[]).length,analyse:(r.etoile.ana||[]).length,criteres:r.etoile}:null,
     axePrioritaire:r.axe||'',bilan:r.bilan||'',suite:r.suite||'',etirements:!!r.etire,
@@ -349,7 +349,7 @@ let toastT;function toast(t){clearTimeout(toastT);let d=$('.toast');if(!d){d=doc
 function lancerWod(i){
   const E=elv(),n=S.seance,r=rec(E.id,n),W=r.wods[i];
   CHRONO.lancer(W,{athlete:E.nom,titreWod:CTL.titreWod(W),mv:mvById,visuel:mvVisuel,
-    onFin(x){W.fait=true;W.res=x.res;W.fc=x.fc;W.ress=x.ressenti;W.regul=x.regulations;W.norep=x.noRep;W.ex.forEach((e,k)=>e.v=x.versions[k]);
+    onFin(x){W.fait=true;W.res=x.res;W.fc=x.fc;W.ress=x.ressenti;W.regul=x.regulations;W.norep=x.noRep;W.ex.forEach((e,k)=>{e.v=x.versions[k];if(x.notes&&x.notes[k])e.note=x.notes[k];else delete e.note});
       touche(r);sauver();rendre();const mob=mobileDe(E.id,n),d=CTL.fcDans(x.fc,mob);
       toast(x.fc&&d!=null?(d===0?'FC dans la fourchette de ton mobile.':d<0?'FC sous la fourchette : monte d’un niveau ou d’une version.':'FC au-dessus : version − ou récupération plus longue.'):'WOD enregistré.')},
     onAnnule(){}});
