@@ -10,16 +10,21 @@ window.EPS_AIDE={appli:'Cross training · Élève',bouton:false,publics:[
 <li>En haut, <b>« Qui saisit ? »</b> : touche le prénom de celui qui travaille. Chacun a son carnet.</li>
 <li><span class="bouton">+ Ajouter un WOD</span> : choisis le format (les formats de l’épreuve sont en premier), puis les exercices, leurs répétitions et leur version (−, =, +).</li>
 <li><span class="bouton">▶ Lancer le chrono</span> : le partenaire tient la tablette. Il touche <b>+1</b> à chaque répétition, <b>No rep</b> si le mouvement n’est pas complet, <b>Fini !</b> à l’EMOM, et <b>−</b> / <b>+</b> pour noter une régulation.</li>
-<li>À la fin : la <b>FC</b> (pouls 15 s × 4, tout de suite) et le <b>ressenti</b> de 1 à 4.</li></ul>`},
+<li>À la fin : la <b>FC</b> (pouls 15 s × 4, tout de suite), le <b>ressenti</b> de 1 à 5 et un commentaire. En fin de séance : la note de la séance (étoiles) et ta fatigue.</li></ul>`},
 {t:'Mon tableau, le jour J',html:`<ul><li><b>Mon tableau</b> : âge, FC de repos, mobile et pourquoi, charges.</li>
 <li><b>Jour J</b> : à la séance 8, prépare tes WOD de la séance 9 et vérifie la liste du référentiel (nombre d’exercices, zones, niveaux). Choisis ta répartition AFL2 / AFL3 et écris ton échauffement.</li>
 <li><b>Démarche GAREEPS</b> : aux séances 2, 5 et 8, ton observateur coche les critères de ton <b>étoile</b> ; choisis ton axe prioritaire.</li></ul>`},
-{t:'Les formats du chrono',html:`<ul><li><b>TABATA</b> : effort / repos, compte les répétitions de chaque round. Le « TABATA à régler » propose 20/10, 30/10, 20/20, 40/20, 10/20, 30/30, 45/15 et 1 à 40 cycles.</li>
-<li><b>EMOM</b> : au début de chaque minute, enchaîne tes exercices ; touche <b>Fini !</b> dès que c’est fait, le reste de la minute est ton repos. Le fond passe du vert (plus de 20 s) à l’orange (10 à 20 s) puis au rouge (moins de 10 s).</li>
-<li><b>EMOM+1</b> : tous les exercices chaque minute, avec <b>une répétition de plus</b> à chaque minute. Le partenaire touche <b>✓ Validé</b> après chaque exercice ; si l’élève n’y arrive pas, <b>✗ Non terminé</b> et il note les répétitions faites. Le WOD continue : on compte les minutes validées.</li>
-<li><b>AMRAP</b> : le plus de tours possible ; niveau N0 à N4 = 4, 6, 8, 10 ou 12 répétitions par exercice.</li>
-<li><b>FOR TIME à paliers</b> : N1 6 → 1, N2 8 → 1, N3 10 → 1 répétitions de chaque exercice, le plus vite possible ; touche <b>Palier terminé</b> à chaque palier.</li>
-<li>Bouton 🔊 / 📳 / 🔇 : son, vibreur ou muet.</li></ul>`},
+{t:'Les formats du chrono',html:`<ul><li><b>Départ</b> : décompte 3-2-1, puis GO. Bouton 🔊 / 📳 / 🔇 : son, vibreur ou muet.</li>
+<li><b>TABATA</b> : touche <b>+1</b> à chaque répétition du round. Pendant le repos, donne la <b>note d’exécution</b> de l’exercice (1 à 4). Score : le <b>plancher</b> (le round le plus faible) et le total. Le « TABATA à régler » propose 20/10, 30/10, 20/20, 40/20, 10/20, 30/30, 45/15 et 1 à 40 cycles.</li>
+<li><b>EMOM</b> : au début de chaque minute, enchaîne les exercices ; <b>✓ Validé</b> après chaque exercice, <b>✗ Non terminé</b> si l’élève n’y arrive pas. Le reste de la minute est ton repos. Le fond passe du vert (plus de 20 s) à l’orange (10 à 20 s) puis au rouge (moins de 10 s).</li>
+<li><b>EMOM+1</b> : tous les exercices chaque minute, une répétition de plus à chaque minute. <b>✓ Validé</b> après chaque exercice ; <b>✗ Non terminé</b> si l’élève n’y arrive pas (note les répétitions faites). Le WOD continue : on compte les minutes validées.</li>
+<li><b>AMRAP</b> : l’écran montre l’exercice en cours ; touche <b>✓ Validé</b> après chaque exercice. Un tour est compté quand tous les exercices sont validés ; le temps de chaque tour est gardé. Niveau N0 à N4 = 4, 6, 8, 10 ou 12 répétitions.</li>
+<li><b>FOR TIME à paliers</b> : N1 6 → 1, N2 8 → 1, N3 10 → 1 répétitions de chaque exercice ; <b>✓ Validé</b> après chaque exercice, le temps de chaque palier est gardé.</li>
+<li><b>Note d’exécution sur 4</b> (1 Insuffisant, 2 À améliorer, 3 Bien, 4 Très bien) : demandée après chaque exercice validé ; « Passer » si tu n’as pas pu regarder.</li>
+<li><b>Fin du WOD</b> : le bilan détaillé s’affiche, puis FC, notes d’exécution (proposées d’après celles du WOD), <b>ressenti</b> de 1 (épuisé) à 5 (pas fatigué) et un <b>commentaire</b> obligatoire.</li>
+<li><b>Charges</b> : pour les exercices avec kettlebell, haltère ou barre, note la charge en kg dans le WOD (proposée d’après « Mes charges »).</li>
+<li><b>Tablette en veille ou page rechargée</b> : rouvre le carnet, un bandeau propose <b>Reprendre</b> ; le chrono compte le temps passé.</li>
+<li><b>Binôme</b> : après chaque WOD, « À qui le tour ? » passe au partenaire, qui devient le coach.</li></ul>`},
 {t:'Envoyer en fin de séance',html:`<ol><li>Onglet <b>Envoyer</b> : montre les <b>QR codes</b> au professeur (un par élève), ou <span class="bouton">Envoyer ma séance du jour en ligne</span> quand le professeur l’a activé.</li>
 <li>Un bandeau rouge « Séance non envoyée » reste tant que ce n’est pas fait.</li></ol>`},
 {t:'Code oublié, changer de tablette',html:`<ul><li><b>Code oublié</b> : le carnet ne s’ouvre plus. Supprimez-le et créez un nouveau binôme ; vos séances déjà envoyées sont chez le professeur.</li>

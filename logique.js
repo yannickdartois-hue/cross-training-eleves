@@ -39,6 +39,13 @@ const PRESETS=[
 const NIV_REPS=[4,6,8,10,12]; // N0 à N4 : répétitions par exercice (AMRAP, EMOM) ou au départ (EMOM+1)
 const TABATA_REGLAGES=[[20,10],[30,10],[20,20],[40,20],[10,20],[30,30],[45,15]];
 const somme=a=>(a||[]).reduce((x,y)=>x+y,0);
+// Note d'exécution sur 4 et ressenti sur 5 (échelles de l'appli d'origine)
+const NOTE4=['','Insuffisant','À améliorer','Bien','Très bien'];
+const RESS5=['','Épuisé','Très fatigué','Moyen','Légèrement fatigué','Pas fatigué'];
+const ETOILES=['','Séance difficile','Pas terrible','Correct','Bonne séance','Excellente séance'];
+const FATIGUE=['','Épuisé','Fatigué','Moyen','Légèrement fatigué','En forme'];
+// libellé du ressenti d'un WOD (ancien : 1 à 4, de facile à très difficile ; nouveau : 1 à 5, d'épuisé à pas fatigué)
+function ressentiTxt(n,ech){if(!n)return '—';return ech===5?n+'/5 '+RESS5[n]:n+'/4 (ancienne échelle)'}
 const NOM_F={tabata:'TABATA',emom:'EMOM',amrap:'AMRAP',fortime:'FOR TIME',emom1:'EMOM+1'};
 function dureeS(W){const p=W.p||{};
   if(W.f==='tabata')return p.n*(p.e+p.r);
@@ -67,14 +74,17 @@ function niveauEmom(rest){const L=(rest||[]).filter(x=>x!=null);if(!L.length)ret
 // Tabata : régularité des rounds (écart entre le meilleur et le moins bon)
 function regularite(rounds){const L=(rounds||[]).filter(x=>x!=null);if(L.length<2)return null;return {min:Math.min(...L),max:Math.max(...L),ecart:Math.max(...L)-Math.min(...L),total:L.reduce((a,b)=>a+b,0)}}
 function score(W){const r=W.res||{};
-  if(W.f==='tabata'){const g=regularite(r.rounds);return g?g.total+' rép. ('+g.min+' à '+g.max+' par round)':''}
-  if(W.f==='emom'){const n=niveauEmom(r.restants);return n?'repos moyen '+n.moy+' s'+(n.niv?' (N'+n.niv+')':' (trop dur)'):''}
+  if(W.f==='tabata'){const g=regularite(r.rounds);return g?'plancher '+g.min+' rép. · total '+g.total+' (meilleur round '+g.max+')':''}
+  if(W.f==='emom'){const n=niveauEmom(r.restants),v=r.minutes?r.minutes.filter(m=>m&&m.ok).length+' / '+((W.p&&W.p.min)||r.minutes.length)+' min validées · ':'';return n?v+'repos moyen '+n.moy+' s'+(n.niv?' (N'+n.niv+')':' (trop dur)'):''}
   if(W.f==='emom1'&&r.minutes){const L=r.minutes.filter(Boolean),ok=L.filter(m=>m.ok),tm=ok.length?Math.round(ok.reduce((a,m)=>a+m.t,0)/ok.length):0;
     return L.length?ok.length+' / '+(W.p.min||L.length)+' min validées ('+r.minutes.map(m=>m?(m.ok?'V':'F'):'·').join('')+')'+(tm?' · séquence moy. '+tm+' s':''):''}
   if(W.f==='emom1')return r.derniere?'dernière minute réussie : '+r.derniere+' ('+((W.p.dep||3)+r.derniere-1)+' rép.)':'';
-  if(W.f==='amrap')return r.tours!=null?r.tours+' tours + '+(r.plus||0):'';
+  if(W.f==='amrap'){if(r.tours==null)return '';const n=(W.ex||W.exercices||[]).length;
+    if(r.amIdx!=null){const T=(r.tourT||[]).map((x,k)=>x-(k?r.tourT[k-1]:0)),moy=T.length?Math.round(T.reduce((a,b)=>a+b,0)/T.length):0;
+      return r.tours+' tour'+(r.tours>1?'s':'')+(r.amIdx?' + '+r.amIdx+'/'+n+' exercice'+(r.amIdx>1?'s':''):'')+(moy?' · '+moy+' s par tour':'')}
+    return r.tours+' tours + '+(r.plus||0)}
   if(W.f==='fortime'){const nb=W.p&&W.p.pal?W.p.pal.length:(W.p&&W.p.tours)||3;
-    if(r.temps&&(r.tours==null||r.tours>=nb))return mmss(r.temps)+(r.norep?' + '+r.norep*5+' s de no rep':'');
+    if(r.temps&&(r.tours==null||r.tours>=nb))return mmss(r.temps)+(r.norep?' + '+r.norep*5+' s de no rep':'')+((r.splits||[]).length?' · paliers : '+r.splits.map(mmss).join(', '):'');
     if(r.tours!=null)return (W.p&&W.p.pal?'paliers':'tours')+' faits : '+r.tours+' / '+nb+(W.p&&W.p.cap&&r.temps?' (cap atteint)':'');
     return ''}
   return ''}
@@ -115,7 +125,8 @@ const FCODE={tabata:'t',emom:'e',amrap:'a',fortime:'f',emom1:'p'},FDECODE={t:'ta
 function versQR(o){
   const q={a:'CTE',v:1,c:o.classe,e:o.eleve,s:o.seance,d:o.date,ts:Math.round(Date.now()/1000),k:o.parcours||''};
   if(o.mobile)q.m=o.mobile;if(o.dispense)q.dp=1;
-  q.w=(o.wods||[]).map(w=>[FCODE[w.format]||w.format,w.p,w.ordre==='h'?1:0,(w.exercices||[]).map(e=>[e.id,e.version||0,e.reps||0,e.noteExecution||0]),w.fait?1:0,w.res||0,w.fc||0,w.ressenti||0,w.regulations||0,w.noRep||0,w.special?1:0,w.preset||'']);
+  q.w=(o.wods||[]).map(w=>[FCODE[w.format]||w.format,w.p,w.ordre==='h'?1:0,(w.exercices||[]).map(e=>[e.id,e.version||0,e.reps||0,e.noteExecution||0,e.charge||0]),w.fait?1:0,w.res||0,w.fc||0,w.ressenti||0,w.regulations||0,w.noRep||0,w.special?1:0,w.preset||'',w.echelleRessenti||0,cut(w.commentaire,80)]);
+  if(o.ressentiSeance)q.rs=[o.ressentiSeance.etoiles||0,o.ressentiSeance.fatigue||0];
   if(o.etoile)q.et=[o.etoile.conception||0,o.etoile.production||0,o.etoile.analyse||0];
   if(o.axePrioritaire)q.ax=o.axePrioritaire;
   if(o.bilan)q.b=cut(o.bilan,160);if(o.suite)q.su=cut(o.suite,160);
@@ -129,7 +140,8 @@ function versQR(o){
 // Objet compact du QR → même forme que le fichier (pour l'outil prof)
 function depuisQR(q){
   const o={app:'cross-training-eleves',classe:q.c,eleve:q.e,seance:q.s,date:q.d,ts:q.ts,parcours:q.k||'',mobile:q.m||'',dispense:!!q.dp,source:'qr',
-    wods:(q.w||[]).map(a=>({format:FDECODE[a[0]]||a[0],p:a[1],ordre:a[2]?'h':'v',exercices:(a[3]||[]).map(e=>({id:e[0],version:e[1],reps:e[2],noteExecution:e[3]||null})),fait:!!a[4],res:a[5]||null,fc:a[6]||null,ressenti:a[7]||null,regulations:a[8]||0,noRep:a[9]||0,special:!!a[10],preset:a[11]||''})),
+    wods:(q.w||[]).map(a=>({format:FDECODE[a[0]]||a[0],p:a[1],ordre:a[2]?'h':'v',exercices:(a[3]||[]).map(e=>({id:e[0],version:e[1],reps:e[2],noteExecution:e[3]||null,charge:e[4]||null})),fait:!!a[4],res:a[5]||null,fc:a[6]||null,ressenti:a[7]||null,regulations:a[8]||0,noRep:a[9]||0,special:!!a[10],preset:a[11]||'',echelleRessenti:a[12]||(a[7]?4:0),echelleNote:a[12]===5||!a[7]?4:5,commentaire:a[13]||''})),
+    ressentiSeance:q.rs?{etoiles:q.rs[0]||null,fatigue:q.rs[1]||null}:null,
     etoile:q.et?{conception:q.et[0],production:q.et[1],analyse:q.et[2]}:null,axePrioritaire:q.ax||'',bilan:q.b||'',suite:q.su||'',etirements:!!q.st,
     roles:q.r?{supporter:!!q.r[0],assistant:!!q.r[1],coach:!!q.r[2]}:null,
     tableau:q.tp?{age:q.tp[0]||null,fcRepos:q.tp[1]||null,mobile:q.tp[2]||'',pourquoi:q.tp[3]||'',charges:q.tp[4]||null,amrap:q.tp[5]||null}:null,
@@ -145,8 +157,8 @@ async function chaineQR(q){
 
 function decrireWod(w,MOUV){
   const W={f:w.format||w.f,p:w.p||{}},ps=PRESETS.find(x=>x.id===w.preset);
-  const ex=(w.exercices||[]).map(e=>{const m=MOUV.find(x=>x.id===e.id)||{};return {nom:e.nom||m.nom||e.id,zone:e.zone||m.z||'',niveau:e.niveau||m.n||null,version:e.version||0,reps:e.reps||0,note:e.noteExecution||null}});
+  const ex=(w.exercices||[]).map(e=>{const m=MOUV.find(x=>x.id===e.id)||{};return {nom:e.nom||m.nom||e.id,zone:e.zone||m.z||'',niveau:e.niveau||m.n||null,version:e.version||0,reps:e.reps||0,note:e.noteExecution||null,charge:e.charge||null}});
   return {titre:titreWod(W),format:ps?ps.nom:'',duree:dureeS(W),ex};
 }
-root.CTL={NIV_REPS,TABATA_REGLAGES,somme,decrireWod,VERSION_DONNEES,parcours,NOM_NIV,NOM_DEM,PRESETS,NOM_F,dureeS,mmss,titreWod,exoDuRound,FOURCHETTE,fcDans,niveauEmom,regularite,score,controleEpreuve,slug,nomFichier,versQR,depuisQR,chaineQR};
+root.CTL={NOTE4,RESS5,ETOILES,FATIGUE,ressentiTxt,NIV_REPS,TABATA_REGLAGES,somme,decrireWod,VERSION_DONNEES,parcours,NOM_NIV,NOM_DEM,PRESETS,NOM_F,dureeS,mmss,titreWod,exoDuRound,FOURCHETTE,fcDans,niveauEmom,regularite,score,controleEpreuve,slug,nomFichier,versQR,depuisQR,chaineQR};
 })(typeof window!=='undefined'?window:globalThis);

@@ -25,6 +25,6 @@ Fichiers : `CT_1G3_MartinL_S4.json`. QR : `CTE1:` + JSON compact compressé (`lo
 
 - TABATA « à régler » et découverte : effort/repos 20/10, 30/10, 20/20, 40/20, 10/20, 30/30, 45/15, de 1 à 40 cycles ; en ordre horizontal, l'appli prévient si le nombre de cycles n'est pas divisible par le nombre d'exercices.
 - AMRAP et EMOM : niveau N0 à N4 (4, 6, 8, 10 ou 12 rép. pour tous les exercices, chacun reste réglable) ; durée libre de 1 à 30 min, raccourcis 6 et 10 min.
-- EMOM+1 (mécanique d’origine) : plusieurs exercices validés un par un chaque minute, +1 répétition par minute, « Non terminé » avec les répétitions faites, le WOD continue ; score = minutes validées (V/F). Départ N0 à N4, durée de 1 à 60 min.
+- Tout le chrono et le mode prof de l’appli d’origine ont été repris le 31/10/2026 : voir ORIGINE-cross-training-pompidou.md.
 - FOR TIME à paliers dégressifs : N1 6→1 (21 rép.), N2 8→1 (36), N3 10→1 (55), sans limite de temps ou avec cap de 6 à 15 min. Le « FOR TIME 3 tours » reste disponible.
 - Son / vibreur / muet dans le chrono, avec la même clé `eps_sound_mode` que l'ancienne appli : le réglage est conservé.

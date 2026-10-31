@@ -11,6 +11,7 @@
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-32.png">
 <title>Cross training · Élève</title>
+<script>try{if(localStorage.getItem("eps_theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}</script>
 <style>
 @font-face{font-family:"Archivo";src:url(polices/archivo.woff2) format("woff2");font-weight:100 900;font-stretch:62% 125%;font-display:swap}
 @font-face{font-family:"Atkinson";src:url(polices/atkinson-400.woff2) format("woff2");font-weight:400;font-display:swap}
@@ -308,8 +309,26 @@ html.chrono-ouvert,html.chrono-ouvert body{overflow:hidden}
 .ch-form input{width:100%;min-height:56px;border-radius:12px;border:0;padding:8px 12px;font:800 28px var(--d);color:#1f2937;background:#fff}
 .ch-notes{display:grid;gap:6px}.ch-note{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;background:rgba(255,255,255,.08);border-radius:10px;padding:6px 10px}
 .ch-n5{display:flex;gap:4px}.ch-n5 button{min-width:44px;min-height:44px;border-radius:10px;border:2px solid rgba(255,255,255,.7);background:transparent;color:#fff;font:800 20px var(--d)}.ch-n5 button.on{background:#fff;color:#1f2937}
-.ch-res{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.ch-res button{min-height:72px;border-radius:12px;border:2px solid rgba(255,255,255,.7);background:transparent;color:#fff;font-size:15px}
+.ch-res{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.ch-res button{min-height:72px;border-radius:12px;border:2px solid rgba(255,255,255,.7);background:transparent;color:#fff;font-size:15px}
 .ch-res button b{display:block;font:800 28px var(--d)}.ch-res button.on{background:#fff;color:#1f2937}
+
+/* Repris de l'appli d'origine : note d'exécution après chaque exercice, bilans détaillés, ressenti, reprise */
+.ch-nep{position:fixed;inset:0;z-index:5;background:rgba(15,23,42,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:20px;text-align:center}
+.ch-nep p{margin:0;font-weight:700;letter-spacing:.06em;text-transform:uppercase}.ch-nep>b{font:800 30px var(--d)}
+.ch-nep-b{display:grid;grid-template-columns:repeat(4,minmax(0,150px));gap:10px;width:100%;justify-content:center}
+.ch-nep-b button{min-height:96px;border-radius:16px;border:0;color:#111827;font-weight:700;font-size:16px}.ch-nep-b button b{display:block;font:800 34px var(--d)}
+.ch-nep-b .n1{background:#fca5a5}.ch-nep-b .n2{background:#fdba74}.ch-nep-b .n3{background:#fde68a}.ch-nep-b .n4{background:#86efac}
+.ch-nep-p{min-height:52px;padding:0 26px;border-radius:12px;border:2px solid #fff;background:transparent;color:#fff;font-weight:700}
+.ch-bil{width:100%;max-width:520px;background:rgba(255,255,255,.1);border-radius:14px;padding:10px 14px;margin:6px 0;text-align:left}.ch-bil p{margin:4px 0}.ch-bil ul{margin:4px 0;padding-left:20px}
+.ch-barres{display:flex;align-items:flex-end;gap:4px;min-height:100px;margin:8px 0}.ch-barres div{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px}.ch-barres i{display:block;width:100%;border-radius:4px 4px 0 0}.ch-barres small{font-size:max(12px,var(--fs-min,15px))}
+.ch-form textarea{width:100%;border-radius:12px;border:0;padding:8px 12px;font:17px var(--t);color:#1f2937;background:#fff}
+.ch-ok:disabled{opacity:.45}
+.ed-liste .kg{display:inline-flex;align-items:center;gap:4px;font-size:max(14px,var(--fs-min,15px))}.ed-liste .kg input{width:76px}
+.etoiles5{display:flex;align-items:center;gap:4px;flex-wrap:wrap}.etoiles5 button{width:52px;height:52px;border:0;background:transparent;font-size:34px;color:#cbd5e1}.etoiles5 button.on{color:#f59e0b}
+.fatigue5{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.fatigue5 button{min-height:64px;border-radius:12px;border:1.5px solid var(--trait);background:var(--craie);font-size:max(13px,var(--fs-min,15px))}.fatigue5 button b{display:block;font-size:26px}.fatigue5 button.on{border-color:var(--ligne);background:var(--ligne-pale);font-weight:700}
+.reprise{background:#12222b;color:#fff;border-radius:14px;padding:12px 14px;margin:0 0 12px;display:flex;flex-direction:column;gap:8px}
+#print-area{display:none}
+@media print{body>*:not(#print-area){display:none!important}#print-area{display:block;color:#000;font:12pt Arial,sans-serif}#print-area table{border-collapse:collapse;width:100%}#print-area td,#print-area th{border:1px solid #999;padding:4px;text-align:left;vertical-align:top}}
 </style>
 <style>/* Lisibilité terrain : textes à 15 px minimum à l'écran ; tailles d'origine à l'impression. */@media print{:root{--fs-min:0px}}</style>
 <link rel="stylesheet" href="eps-charte-v1.css">
@@ -319,7 +338,7 @@ html.chrono-ouvert,html.chrono-ouvert body{overflow:hidden}
 </head>
 <body>
 <header>
-  <div class="barre"><img src="icon-192.png" alt=""><div class="app">Cross training · Élève<small id="sous"></small></div><button type="button" class="bt mini baide" onclick="EPSAide.ouvrir()" aria-label="Mode d’emploi" title="Mode d’emploi">?</button><button class="bt mini" data-act="groupe" type="button">Mon binôme</button><button class="bt mini noir" data-act="changer" type="button">Changer</button></div>
+  <div class="barre"><img src="icon-192.png" alt=""><div class="app">Cross training · Élève<small id="sous"></small></div><button type="button" class="bt mini" id="theme" aria-label="Thème clair ou sombre" title="Thème clair ou sombre">🌙</button><button type="button" class="bt mini baide" onclick="EPSAide.ouvrir()" aria-label="Mode d’emploi" title="Mode d’emploi">?</button><button class="bt mini" data-act="groupe" type="button">Mon binôme</button><button class="bt mini noir" data-act="changer" type="button">Changer</button></div>
   <div class="trace"></div>
   <div class="seances" id="seances"></div>
 </header>

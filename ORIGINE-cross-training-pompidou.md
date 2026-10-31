@@ -68,59 +68,60 @@ Lecture complète du code d'origine faite le 31/10/2026, sur l'état publié du 
 - Chaque filière est divisée en 3 zones (haut du corps, tronc et abdos, bas du corps).
 - Chaque exercice a une difficulté : vert, orange ou noir.
 
-## 2. Ce qui est repris dans cross-training-eleves
+## 2. Ce qui est repris (31/10/2026 : « tout reprendre »)
+
+**Appli élève (cross-training-eleves)**
 
 | Élément d'origine | Dans l'appli élève |
 |---|---|
-| Les 48 exercices | Tous présents dans la banque, parfois sous un nom proche (« Chaise » → « Chaise contre le mur »). Quand le nom diffère, le nom d’origine est affiché sous celui du cycle (« ancienne appli ») |
-| 3 filières | Rattachées aux 2 mobiles du référentiel (outil du cycle, onglet Mobiles et FC) |
-| 7 réglages Tabata, 1 à 40 cycles | Repris (« TABATA à régler », Tabata de découverte). Les Tabata de l'épreuve restent fixés par le référentiel |
-| Rotation verticale / horizontale | Reprise. En horizontal, l'appli prévient au lieu d'arrondir le nombre de cycles |
-| Niveaux N0 à N4 (4, 6, 8, 10, 12) en AMRAP et EMOM | Repris. Chaque exercice reste réglable à part |
-| Durée réglable, 6 min par défaut | Reprise : EMOM et EMOM+1 de 1 à 60 min, AMRAP de 1 à 30 min |
-| **EMOM+1** | **Repris avec sa mécanique** : plusieurs exercices validés un par un, +1 répétition par minute, « Non terminé » avec les répétitions faites, le WOD continue, score en minutes validées (détail V/F), temps de séquence et repos de chaque minute |
-| FOR TIME à paliers N1/N2/N3 | Repris. Sans limite de temps par défaut, avec une limite facultative de 6 à 15 min |
-| Couleurs de la minute en EMOM (> 20 s, 10–20 s, < 10 s) | Reprises (vert, orange, rouge) en EMOM et EMOM+1 |
-| Son / vibreur / muet | Repris, avec la même clé `eps_sound_mode` |
-| Note d'exécution | Gardée, mais **sur 5** et saisie à la fin du WOD (voir les écarts ci-dessous) |
+| 48 exercices | Tous dans la banque, parfois sous un nom proche. Quand le nom diffère, le nom d'origine est affiché (« ancienne appli ») |
+| 3 filières | Rattachées aux 2 mobiles du référentiel (outil du cycle) |
+| Tabata : 7 réglages, 1 à 40 cycles, vertical / horizontal | Repris (« TABATA à régler », Tabata de découverte). Les Tabata de l'épreuve restent fixés par le référentiel |
+| Score « plancher » du Tabata, détail cycle par cycle MIN / MAX | Repris : score « plancher X · total Y », barres par round dans le bilan |
+| Niveaux N0 à N4 (4, 6, 8, 10, 12) | Repris en AMRAP, EMOM et EMOM+1. Chaque exercice reste réglable à part |
+| Durée réglable | EMOM et EMOM+1 : 1 à 60 min. AMRAP : 1 à 30 min. Raccourcis 6 et 10 min |
+| AMRAP séquentiel | Repris : exercice en cours, « ✓ Validé », « ↩ Annuler », tour partiel, temps de chaque tour, graphique (vert / rouge par rapport à la moyenne) |
+| EMOM séquentiel | Repris : exercices validés un par un, « ✗ Non terminé » avec les répétitions faites, pastilles des minutes, temps de séquence et repos. Le repos de chaque minute sert toujours l'analyse du référentiel |
+| EMOM+1 | Repris : mêmes règles, +1 répétition par minute, le WOD continue après une minute ratée |
+| FOR TIME à paliers N1 / N2 / N3 | Repris : exercice par exercice, temps de chaque palier, arrêt automatique au dernier. Sans limite de temps par défaut, limite facultative de 6 à 15 min |
+| Couleur de la minute (> 20 s, 10–20 s, < 10 s), « À venir » | Repris |
+| Compte à rebours | 3 s, comme l'origine |
+| Note d'exécution sur 4 | Reprise : fenêtre 1 Insuffisant · 2 À améliorer · 3 Bien · 4 Très bien après chaque exercice validé (après chaque effort en Tabata), avec « Passer ». En fin de WOD, la moyenne est proposée et reste modifiable |
+| Ressenti du WOD | Repris : 5 niveaux (Épuisé → Pas fatigué) et commentaire obligatoire (3 caractères minimum) |
+| Ressenti de séance | Repris : étoiles 1 à 5 et fatigue 1 à 5, dans « Fin de séance ». Le commentaire de séance est le « bilan » déjà présent |
+| Charge en kg | Reprise pour les exercices avec kettlebell, haltère ou barre, proposée d'après « Mes charges » |
+| Binôme : « À qui le tour ? » | Repris après chaque WOD : passer au partenaire (qui devient coach) ou rester |
+| Reprise après veille ou rechargement | Reprise : l'état du WOD est gardé chaque seconde (sans aucun nom, seulement des identifiants). À la réouverture du carnet, un bandeau propose « Reprendre » ; le temps passé est compté, les rounds de Tabata manqués comptent 0 |
+| Écran allumé, avertissement si la tablette ne sait pas le garder | Repris |
+| Son / vibreur / muet | Repris, même clé `eps_sound_mode` |
+| Thème sombre | Repris en option (bouton 🌙, clé `eps_theme`). Clair par défaut, comme le demande la charte |
+| Lecture facilitée | Déjà dans le mode d'emploi commun |
+| Bouton DEMO | Repris : « Ouvrir la démo » (binôme fictif, code 0000) |
+| Bilan de séance imprimable / PDF et CSV | Repris dans l'onglet Envoyer |
+| Historique sur la tablette | Onglet Progrès (toutes les séances du binôme) |
 
-## 3. Ce qui est différent ou pas encore repris
+**Outil prof (cross-training-prof)**
 
-Ces écarts sont connus. Chacun peut être repris si tu le décides.
+| Élément d'origine | Dans l'outil prof |
+|---|---|
+| Scan en direct | Déjà présent (lecture continue) |
+| Photo du QR (iPad) | Reprise : « Lire une photo de QR » |
+| Texte collé | Repris |
+| Lecture du format `NOM;PRÉNOM;CLASSE;SCORE…` | Reprise : les QR de l'ancienne appli sont lus et rangés à part, avec recherche, suppression et export CSV / JSON |
+| Recherche d'un élève | Reprise dans l'Appel |
+| Doublons | Le plus récent est gardé (même élève, même séance) ; pour l'ancienne appli, même élève et même jour = remplacé |
+| Exports CSV, PDF, JSON | Repris (Exporter) |
 
-1. **Charge en kg par exercice** : pas encore dans l'appli élève, alors qu'elle compte en Terminale.
-2. **AMRAP séquentiel** : l'appli élève compte « +1 tour / +1 rép. ». Il n'y a ni validation exercice par exercice, ni temps par tour, ni graphique.
-3. **FOR TIME** : l'appli élève valide palier par palier, pas exercice par exercice. Les temps de palier ne sont pas gardés.
-4. **EMOM simple** : l'appli élève garde « Fini ! » une fois par minute, avec le repos restant, ce qui sert l'analyse du référentiel. La validation exercice par exercice n'existe qu'en EMOM+1.
-5. **Note d'exécution** :
-   - Sur 5 dans l'appli élève, contre 4 à l'origine. À trancher, pour que les deux échelles ne coexistent pas.
-   - Saisie à la fin du WOD, et non après chaque exercice.
-6. **Ressenti** :
-   - L'appli élève a un ressenti du WOD de 1 à 4, sans commentaire obligatoire, et un bilan de séance écrit.
-   - L'origine avait 5 niveaux avec commentaire obligatoire, plus un ressenti de séance en étoiles et une échelle de fatigue.
-7. **Tabata** :
-   - Le score « plancher » n'est pas affiché comme tel : l'appli élève montre le total et l'écart min–max.
-   - Les répétitions se comptent sur un seul bouton +1 par round, au lieu d'un compteur par exercice.
-8. **Reprise après veille ou rechargement en plein WOD** : pas dans l'appli élève, alors que l'appli d'origine sait le faire.
-9. **Compte à rebours** : 10 s dans l'appli élève, contre 3 s à l'origine.
-10. **Bilan imprimable et CSV côté élève** : ils sont passés dans l'outil prof (fichiers, QR, exports).
-11. **Prof dans la même appli** : remplacé par l'outil prof séparé.
-    - Le QR est compressé et contient tout le carnet.
-    - Le format `NOM;PRÉNOM;…` de l'origine n'est pas lu par l'outil prof.
+## 3. Ce qui reste différent
+
+1. Un seul compteur « +1 » par round en Tabata, au lieu d'un compteur par carte d'exercice : un seul exercice est actif à la fois.
+2. Les QR de l'ancienne appli n'ont pas de numéro de séance : ils ne remplissent ni l'appel ni la grille, ils restent dans leur liste.
+3. Les séances enregistrées avant le 31/10/2026 gardent leur ancienne échelle (note sur 5, ressenti sur 4), signalée à l'affichage. L'indice de la grille ramène les notes sur 4.
+4. La grille d'évaluation du référentiel, l'étoile GAREEPS, le jour J et le carnet chiffré n'existaient pas dans l'appli d'origine. Ils sont propres à cette appli.
 
 ## 4. Où sont les reprises dans le code
 
-- `logique.js` :
-  - `NIV_REPS`, `TABATA_REGLAGES` ;
-  - presets `tl` (Tabata à régler), `e1` (EMOM+1), `fp1` à `fp3` (paliers) ;
-  - `score()` pour EMOM+1 (`res.minutes`) et paliers.
-- `chrono.js` :
-  - EMOM+1 (`seq`, `echec`, `R.minutes`, `repsE1`) ;
-  - zones de couleur (`zone`) ;
-  - son / vibreur / muet ;
-  - paliers (`NBFT`).
-- `app.js` (éditeur de WOD) :
-  - boutons de réglage Tabata ;
-  - niveaux N0 à N4 ;
-  - paliers et limite de temps ;
-  - durée.
+- `chrono.js` : tout le chrono (décompte 3 s, validations exercice par exercice, notes /4, bilans détaillés, ressenti 5 + commentaire, état pour la reprise, son / vibreur / muet, couleurs de minute).
+- `logique.js` : `NIV_REPS`, `TABATA_REGLAGES`, `NOTE4`, `RESS5`, `ETOILES`, `FATIGUE`, presets `tl`, `e1`, `fp1` à `fp3`, scores (plancher, tours et temps par tour, minutes validées, paliers), QR (charge, échelle, commentaire, ressenti de séance).
+- `app.js` : éditeur (réglages, niveaux, charges en kg), reprise du WOD (`cte-wod-en-cours`), « À qui le tour ? », ressenti de séance, démo, thème, impression et CSV.
+- `cross-training-prof/prof.js` : `lireAncien`, `lireTexte`, `lirePhoto`, liste de l'ancienne appli, recherche, impression, JSON.
