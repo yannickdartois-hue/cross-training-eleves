@@ -3,7 +3,8 @@
    Mécaniques reprises de l'appli « Cross Training Pompidou » (Yannick Dartois) :
    décompte 3 s, validation exercice par exercice (AMRAP, FOR TIME, EMOM+1), temps par tour
    et par palier, plancher du Tabata, note d'exécution sur 4 demandée après chaque exercice,
-   ressenti du WOD sur 5 avec commentaire, son / vibreur / muet, couleurs de la minute,
+   son / vibreur / muet, couleurs de la minute. Ajouts : 3 critères observables par exercice (note /4 calculée),
+   effort perçu 1 à 10, décision de régulation, coach et conseil, saisie légère ou complète (réglée par le prof),
    reprise après mise en veille ou rechargement (état transmis à l'appli par opts.onEtat).
    ===================================================================== */
 (function(root){
@@ -27,14 +28,23 @@ const sec=s=>Math.round(s)+' s';
 // Échelles de l'appli d'origine
 const NOTES=[[1,'Insuffisant'],[2,'À améliorer'],[3,'Bien'],[4,'Très bien']];
 const RESS=[[1,'😩','Épuisé'],[2,'😓','Très fatigué'],[3,'😐','Moyen'],[4,'🙂','Légèrement fatigué'],[5,'😄','Pas fatigué']];
-root.CT_NOTES=NOTES;root.CT_RESS=RESS;
+// Effort perçu de 1 à 10 (échelle de Borg CR10) et critères observables de chaque mouvement
+const RPE=['','Très très facile','Facile','Modéré','Un peu dur','Dur','Dur +','Très dur','Très dur +','Très très dur','Maximal'];
+const CRIT=['Placement','Respiration','Amplitude'];
+const REGLES=[['baisse','Je baisse','une version ou un niveau de moins'],['garde','Je garde','même travail'],['monte','Je monte','une version ou un niveau de plus'],['recup','J’allonge la récup','plus de repos entre les efforts']];
+root.CT_NOTES=NOTES;root.CT_RESS=RESS;root.CT_RPE=RPE;root.CT_CRIT=CRIT;root.CT_REGLES=REGLES;
+// note sur 4 calculée à partir des 3 critères : 0 réussi = 1, 1 = 2, 2 = 3, 3 = 4
+const noteCrit=c=>c&&c.every(x=>x===0||x===1)?1+c.reduce((a,b)=>a+b,0):null;
+root.CT_noteCrit=noteCrit;
 
 /* W : {f,p,ordre,ex:[{m,v,reps,kg}]}
    opts : {athlete, titreWod, mv:id→mouvement, visuel:m→html, onFin(resultat), onAnnule(), onEtat(etat|null), reprise:etat} */
 function lancer(W,opts){
   const PREP=3,p=W.p||{},ex=W.ex||[],N=Math.max(1,ex.length),snap=opts.reprise||null;
   const R=snap?snap.R:{rounds:[],restants:[],minutes:[],tours:0,amIdx:0,tourT:[],ftPal:0,ftEx:0,splits:[],temps:null,arrete:null,
-    norep:0,regul:0,versions:ex.map(e=>e.v||0),notesLog:[],seq:0,echec:null,minuteFaite:-1};
+    norep:0,regul:0,versions:ex.map(e=>e.v||0),notesLog:[],critLog:[],seq:0,echec:null,minuteFaite:-1};
+  if(!R.critLog)R.critLog=[];
+  const COMPLET=!!opts.complet; // saisie complète : critères demandés après chaque exercice, ressentis détaillés, commentaire et conseil obligatoires
   let t0=null,pauseA=null,pauseMs=0,fini=false,tick=null,dernierS=-1,phaseVue=snap?snap.phaseVue||'':'',arret=false,dernierEtat=0;
   let file=[]; // exercices dont la note d'exécution est demandée (index)
   const repsE1=(j,i)=>W.f==='emom'?((ex[j]&&ex[j].reps)||7):((ex[j]&&ex[j].reps)||p.dep||6)+i;
@@ -63,7 +73,9 @@ function lancer(W,opts){
       <div class="ch-reg"><button type="button" data-ch="moins" data-i="${i}" aria-label="Version plus facile">−</button><button type="button" data-ch="plusv" data-i="${i}" aria-label="Version plus difficile">+</button></div></div></div>`}
   const avenir=(j,txt)=>`<p class="ch-avenir">→ ${txt||'À venir'} : <b>${nomEx(j)}</b></p>`;
   const zone=r=>r>20?'z1':r>10?'z2':'z3'; // couleur de la minute : > 20 s, 10 à 20 s, < 10 s
-  const demanderNotes=L=>{L.forEach(j=>{if(ex[j])file.push(j)})};
+  // saisie complète seulement : les critères sont demandés au partenaire après chaque exercice validé
+  let nepC=[1,1,1];
+  const demanderNotes=L=>{if(!COMPLET)return;L.forEach(j=>{if(ex[j])file.push(j)})};
   function etat(force){if(!opts.onEtat)return;const t=Date.now();if(!force&&t-dernierEtat<1000)return;dernierEtat=t;
     try{opts.onEtat({v:1,R,ecoule:ecoule(),marche:!pauseA,phaseVue,fini,ts:t})}catch(e){}}
 
@@ -115,8 +127,11 @@ function lancer(W,opts){
         ${j+1<ex.length?avenir(j+1):k+1<NBFT?`<p class="ch-avenir">→ ${p.pal?'Palier '+(k+2)+' : '+p.pal[k+1]+' rép.':'Tour '+(k+2)} · <b>${nomEx(0)}</b></p>`:'<p class="ch-avenir">Dernier exercice !</p>'}
         ${points(NBFT,x=>x<R.ftPal?'ok':x===R.ftPal?'enc':'',x=>p.pal?p.pal[x]:x+1)}`;}
     const fin=Math.max(0,total-t);
-    const nep=file.length?`<div class="ch-nep" role="dialog" aria-label="Note d’exécution"><p>Note d’exécution</p><b>${nomEx(file[0])}</b>
-      <div class="ch-nep-b">${NOTES.map(([n,l])=>`<button type="button" class="n${n}" data-ch="nep" data-v="${n}"><b>${n}</b>${l}</button>`).join('')}</div><button type="button" class="ch-nep-p" data-ch="nepskip">Passer</button></div>`:'';
+    const mc=file.length?(exo(file[0])||{}).c||[]:[];
+    const nep=file.length?`<div class="ch-nep" role="dialog" aria-label="Critères d’exécution"><p>Exécution · le coach regarde</p><b>${nomEx(file[0])}</b>
+      <div class="ch-crit">${CRIT.map((c,k)=>`<button type="button" class="${nepC[k]?'ok':'ko'}" data-ch="nepc" data-k="${k}"><b>${nepC[k]?'✓':'✗'} ${c}</b><small>${esc(mc[k]||'')}</small></button>`).join('')}</div>
+      <p class="ch-lab">Touche un critère pour le passer en ✗ · note ${noteCrit(nepC)}/4 ${esc(NOTES[noteCrit(nepC)-1][1])}</p>
+      <div class="ch-boutons"><button type="button" class="ch-nep-p" data-ch="nepskip">Passer</button><button type="button" class="ch-gros ch-fini" data-ch="nepok">Valider</button></div></div>`:'';
     v.innerHTML=`<div class="chr ${couleur}${pauseA?' pause':''}"><div class="ch-haut"><span>${esc(opts.athlete||'')}</span><span>${esc(opts.titreWod||'')}</span><span>${sansCap?'':'reste '+mmss(fin)}</span></div>
       <p class="ch-titre">${titre}</p><p class="ch-temps">${grand}</p><p class="ch-sous">${sous}</p>
       <div class="ch-corps">${corps}</div>
@@ -156,30 +171,41 @@ function lancer(W,opts){
     if(W.f==='emom')R.minutes.forEach((m,i)=>{if(m&&R.restants[i]==null)R.restants[i]=m.ok?m.repos:0});
     if(W.f==='tabata'){const fait=Math.min(p.n,Math.ceil(te/(p.e+p.r)));for(let i=0;i<fait;i++)if(R.rounds[i]==null)R.rounds[i]=0}
     // note proposée = moyenne des notes données pendant le WOD
-    ex.forEach((e,j)=>{const L=R.notesLog.filter(x=>x.j===j).map(x=>x.n);notes[j]=L.length?Math.round(L.reduce((a,b)=>a+b,0)/L.length):null});
+    // critères proposés : réussis au moins une fois sur deux pendant le WOD
+    ex.forEach((e,j)=>{const L=R.critLog.filter(x=>x.j===j);crit[j]=L.length?[0,1,2].map(k=>L.filter(x=>x.c[k]).length*2>=L.length?1:0):[null,null,null]});
     peindreFin();etat(true);
   }
+  const fourch=opts.fourchette||null;
+  function regleConseillee(){const f=+fc||0;if(fourch&&f&&f>fourch[1]||rpe>=9)return 'baisse';if(fourch&&f&&f<fourch[0]||rpe&&rpe<=3)return 'monte';return rpe||f?'garde':''}
+  const manque=()=>{const L=[];if(!rpe)L.push('l’effort perçu');if(!regle)L.push('ta décision pour le prochain WOD');if(COMPLET&&com.trim().length<3)L.push('le commentaire');if(COMPLET&&conseil.trim().length<3)L.push('le conseil du coach');return L};
   function peindreFin(){
-    const pret=ressenti&&com.trim().length>=3;
+    const pret=!manque().length,rc=regleConseillee(),coachs=opts.coachs||[];
     v.innerHTML=`<div class="chr fin"><p class="ch-titre">Terminé</p><p class="ch-sous">${esc(opts.athlete||'')} · ${esc(opts.titreWod||'')}</p>
       ${bilanHTML()}
-      <div class="ch-form"><label for="ch-fc">Fréquence cardiaque (pouls 15 s × 4, tout de suite)</label><input id="ch-fc" type="number" inputmode="numeric" min="40" max="230" placeholder="ex. 152" value="${fc||''}">
-      <p class="ch-lab">Note d’exécution sur 4 (le partenaire)${R.notesLog.length?' · proposée d’après les notes données pendant le WOD':''}</p>
-      <div class="ch-notes">${ex.map((e,j)=>`<div class="ch-note"><span>${nomEx(j)}</span><span class="ch-n5">${NOTES.map(([x,l])=>`<button type="button" class="${notes[j]===x?'on':''}" data-ch="note" data-i="${j}" data-v="${x}" title="${l}">${x}</button>`).join('')}</span></div>`).join('')}</div>
-      <p class="ch-lab">Ressenti du WOD (obligatoire)</p><div class="ch-res">${RESS.map(([n,em,l])=>`<button type="button" class="${ressenti===n?'on':''}" data-ch="res" data-v="${n}"><b>${em}</b>${l}</button>`).join('')}</div>
-      <label for="ch-com" class="ch-lab">Décris ce WOD : ce qui était difficile, ce que tu as réussi (obligatoire)</label><textarea id="ch-com" rows="2">${esc(com)}</textarea>
-      <p class="ch-lab ch-indic">${pret?'✓ Prêt à enregistrer':'⚠ Choisis un ressenti et écris un commentaire'}</p>
+      <div class="ch-form"><label for="ch-fc">Fréquence cardiaque (pouls 15 s × 4, tout de suite)</label><input id="ch-fc" type="number" inputmode="numeric" min="40" max="230" placeholder="ex. 152" value="${fc||''}">${fourch?`<p class="ch-lab">Fourchette de ton mobile : ${fourch[0]} à ${fourch[1]}</p>`:''}
+      <p class="ch-lab">Exécution (le coach) : touche chaque critère, ✓ réussi ou ✗ à revoir${R.critLog.length?' · proposé d’après le WOD':''}</p>
+      <div class="ch-notes">${ex.map((e,j)=>{const n=noteCrit(crit[j]);return `<div class="ch-note"><span>${nomEx(j)}${n?` <small>· ${n}/4 ${esc(NOTES[n-1][1])}</small>`:''}</span><span class="ch-c3">${CRIT.map((c,k)=>`<button type="button" class="${crit[j][k]===1?'ok':crit[j][k]===0?'ko':''}" data-ch="crit" data-i="${j}" data-k="${k}">${crit[j][k]===1?'✓':crit[j][k]===0?'✗':'?'} ${c}</button>`).join('')}</span></div>`}).join('')}</div>
+      <p class="ch-lab">Effort perçu de 1 à 10 (obligatoire)</p><div class="ch-rpe">${RPE.slice(1).map((l,k)=>`<button type="button" class="r${k+1}${rpe===k+1?' on':''}" data-ch="rpe" data-v="${k+1}"><b>${k+1}</b>${l}</button>`).join('')}</div>
+      ${COMPLET?`<p class="ch-lab">Où l’as-tu senti ? (1 = rien, 5 = au maximum)</p><div class="ch-dims">${[['mu','Muscles'],['so','Souffle'],['te','Tête']].map(([d,l])=>`<div><span>${l}</span>${[1,2,3,4,5].map(x=>`<button type="button" class="${dims[d]===x?'on':''}" data-ch="dim" data-d="${d}" data-v="${x}">${x}</button>`).join('')}</div>`).join('')}</div>`:''}
+      <p class="ch-lab">Au prochain WOD, je… (obligatoire)${rc?' · conseillé d’après ta FC et ton effort : <b>'+esc(REGLES.find(x=>x[0]===rc)[1])+'</b>':''}</p>
+      <div class="ch-regle">${REGLES.map(([k,l,d])=>`<button type="button" class="${regle===k?'on':''}${rc===k?' conseil':''}" data-ch="regle" data-v="${k}"><b>${l}</b>${d}</button>`).join('')}</div>
+      ${coachs.length?`<label for="ch-coach" class="ch-lab">Coach (celui qui a regardé et compté)</label><select id="ch-coach">${coachs.map(n=>`<option${n===coach?' selected':''}>${esc(n)}</option>`).join('')}<option value=""${coach?'':' selected'}>Personne (seul)</option></select>`:''}
+      <label for="ch-cons" class="ch-lab">Conseil du coach pour la suite${COMPLET?' (obligatoire)':' (facultatif)'}</label><textarea id="ch-cons" rows="2" placeholder="ex. descends plus bas au squat, garde le dos droit">${esc(conseil)}</textarea>
+      <label for="ch-com" class="ch-lab">Décris ce WOD : ce qui était difficile, ce que tu as réussi${COMPLET?' (obligatoire)':' (facultatif)'}</label><textarea id="ch-com" rows="2">${esc(com)}</textarea>
+      <p class="ch-lab ch-indic">${pret?'✓ Prêt à enregistrer':'⚠ Il manque : '+manque().join(', ')}</p>
       <div class="ch-bas"><button type="button" data-ch="annuler" class="${jeter?'confirme':''}">${jeter?'Sûr ? Le WOD sera perdu':'Ne pas enregistrer'}</button><button type="button" class="ch-ok" data-ch="enreg"${pret?'':' disabled'}>Enregistrer</button></div></div></div>`;
   }
-  let ressenti=0,com='',fc='',jeter=false;const notes=ex.map(()=>null);
+  let ressenti=0,com='',fc='',jeter=false,rpe=0,regle='',conseil='',coach=opts.coach||'';const notes=ex.map(()=>null),crit=ex.map(()=>[null,null,null]),dims={};
+  const lireChamps=()=>{const g=id=>v.querySelector(id);if(g('#ch-com'))com=g('#ch-com').value;if(g('#ch-cons'))conseil=g('#ch-cons').value;if(g('#ch-fc'))fc=g('#ch-fc').value;if(g('#ch-coach'))coach=g('#ch-coach').value};
   function fermer(){clearInterval(tick);eveil(false);v.remove();document.documentElement.classList.remove('chrono-ouvert');document.removeEventListener('visibilitychange',vis)}
   const vis=()=>{if(document.visibilityState==='hidden')etat(true)};
   document.addEventListener('visibilitychange',vis);
-  v.addEventListener('input',e=>{if(e.target.id==='ch-com'){com=e.target.value;const ok=ressenti&&com.trim().length>=3,b=v.querySelector('[data-ch="enreg"]'),h=v.querySelector('.ch-indic');if(b)b.disabled=!ok;if(h)h.textContent=ok?'✓ Prêt à enregistrer':'⚠ Choisis un ressenti et écris un commentaire'}
-    if(e.target.id==='ch-fc')fc=e.target.value});
+  v.addEventListener('input',e=>{if(!fini)return;lireChamps();const ok=!manque().length,b=v.querySelector('[data-ch="enreg"]'),h=v.querySelector('.ch-indic');if(b)b.disabled=!ok;if(h)h.textContent=ok?'✓ Prêt à enregistrer':'⚠ Il manque : '+manque().join(', ')});
+  v.addEventListener('change',e=>{if(fini&&e.target.id==='ch-coach')coach=e.target.value});
   v.addEventListener('click',e=>{const b=e.target.closest('[data-ch]');if(!b)return;const a=b.dataset.ch,t=ecoule(),o=ou(t),te=Math.max(0,t-PREP);
     if(a!=='stop')arret=false;
-    if(a==='nep'||a==='nepskip'){const j=file.shift();if(a==='nep'&&j!=null)R.notesLog.push({j,n:+b.dataset.v});peindre();return}
+    if(a==='nepc'){const k=+b.dataset.k;nepC[k]=nepC[k]?0:1;peindre();return}
+    if(a==='nepok'||a==='nepskip'){const j=file.shift();if(a==='nepok'&&j!=null)R.critLog.push({j,c:nepC.slice()});nepC=[1,1,1];peindre();return}
     if(a==='plus'&&o&&o.ph[0]==='eff'){const i=o.ph[2];R.rounds[i]=(R.rounds[i]||0)+1;try{navigator.vibrate&&navigator.vibrate(25)}catch(x){}}
     else if(a==='moins1'&&o&&o.ph[0]==='eff'){const i=o.ph[2];R.rounds[i]=Math.max(0,(R.rounds[i]||0)-1)}
     else if(a==='norep')R.norep++;
@@ -207,14 +233,16 @@ function lancer(W,opts){
     else if(a==='sonmode'){modeSuivant();if(mode()==='vibrate')try{navigator.vibrate&&navigator.vibrate(60)}catch(x){}}
     else if(a==='pause'){if(pauseA){pauseMs+=Date.now()-pauseA;pauseA=null}else pauseA=Date.now();etat(true)}
     else if(a==='stop'){if(!arret){arret=true}else{if(W.f!=='fortime')R.arrete=Math.round(te);terminer();return}}
-    else if(a==='note'){const i=+b.dataset.i;notes[i]=+b.dataset.v;v.querySelectorAll(`[data-ch="note"][data-i="${i}"]`).forEach(x=>x.classList.toggle('on',x===b));return}
-    else if(a==='res'){jeter=false;ressenti=+b.dataset.v;const c=v.querySelector('#ch-com');if(c)com=c.value;peindreFin();return}
-    else if(a==='annuler'&&!jeter){jeter=true;const c=v.querySelector('#ch-com');if(c)com=c.value;peindreFin();return}
+    else if(a==='crit'){lireChamps();const i=+b.dataset.i,k=+b.dataset.k;crit[i][k]=crit[i][k]===1?0:1;jeter=false;peindreFin();return}
+    else if(a==='rpe'){lireChamps();rpe=+b.dataset.v;jeter=false;peindreFin();return}
+    else if(a==='dim'){lireChamps();dims[b.dataset.d]=+b.dataset.v;peindreFin();return}
+    else if(a==='regle'){lireChamps();regle=b.dataset.v;jeter=false;peindreFin();return}
+    else if(a==='annuler'&&!jeter){lireChamps();jeter=true;peindreFin();return}
     else if(a==='annuler'){fermer();opts.onEtat&&opts.onEtat(null);opts.onAnnule&&opts.onAnnule();return}
-    else if(a==='enreg'){const fcv=+((v.querySelector('#ch-fc')||{}).value||0)||null;com=(v.querySelector('#ch-com')||{}).value||com;if(!ressenti||com.trim().length<3)return;fermer();
+    else if(a==='enreg'){lireChamps();const fcv=+fc||null;if(manque().length)return;fermer();ex.forEach((e,j)=>notes[j]=noteCrit(crit[j]));
       const res={rounds:R.rounds,restants:R.restants,tours:R.tours,amIdx:R.amIdx,tourT:R.tourT,splits:R.splits,temps:R.temps,arrete:R.arrete};if(SEQ)res.minutes=R.minutes;
       opts.onEtat&&opts.onEtat(null);
-      opts.onFin({res,fc:fcv,ressenti,commentaire:com.trim(),regulations:R.regul,noRep:R.norep,versions:R.versions,notes});return}
+      opts.onFin({res,fc:fcv,rpe,dims:COMPLET&&Object.keys(dims).length?Object.assign({},dims):null,commentaire:com.trim(),regle,coach:coach||'',conseil:conseil.trim(),regulations:R.regul,noRep:R.norep,versions:R.versions,notes,crit:crit.map(c=>c.slice())});return}
     if(!fini)peindre()});
   function demarrer(){son(1,.01,.001);if(t0==null)t0=Date.now();eveil(true);tick=setInterval(peindre,200);peindre()}
   if(snap){ // reprise : le temps passé tablette en veille ou page fermée est compté
@@ -227,6 +255,7 @@ function lancer(W,opts){
   const iosVeille=!('wakeLock' in navigator);
   v.innerHTML=`<div class="chr prep"><div class="ch-haut"><span>${esc(opts.athlete||'')}</span><span>${esc(opts.titreWod||'')}</span><span>${sansCap?'sans limite':mmss(total-PREP)}</span></div>
     <p class="ch-titre">Prêts ?</p><p class="ch-sous">L’athlète se place. Le partenaire tient la tablette : il valide chaque exercice, compte, note les no rep et l’exécution.</p>
+    ${opts.rappel?`<p class="ch-rappel">🔁 Au dernier WOD, tu as décidé : <b>${esc(opts.rappel)}</b></p>`:''}
     ${iosVeille?'<p class="ch-lab">⚠ Cette tablette peut se mettre en veille : garde l’écran allumé (touche-le de temps en temps). Le WOD reprend s’il se coupe.</p>':''}
     <div class="ch-corps"><div class="ch-liste">${ex.map((e,j)=>exoHTML(j,true,W.f==='tabata'?null:W.f==='emom1'?repsE1(j,0):W.f==='fortime'?repsFT(j):e.reps||null)).join('')}</div></div>
     <div class="ch-bas"><button type="button" data-ch2="annuler">Annuler</button><button type="button" data-ch2="son">${libMode()}</button><button type="button" class="ch-ok" data-ch2="go">Départ (3 s)</button></div></div>`;

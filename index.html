@@ -329,6 +329,20 @@ html.chrono-ouvert,html.chrono-ouvert body{overflow:hidden}
 .reprise{background:#12222b;color:#fff;border-radius:14px;padding:12px 14px;margin:0 0 12px;display:flex;flex-direction:column;gap:8px}
 #print-area{display:none}
 @media print{body>*:not(#print-area){display:none!important}#print-area{display:block;color:#000;font:12pt Arial,sans-serif}#print-area table{border-collapse:collapse;width:100%}#print-area td,#print-area th{border:1px solid #999;padding:4px;text-align:left;vertical-align:top}}
+
+/* Critères observables, effort perçu, régulation */
+.ch-crit{display:grid;gap:8px;width:100%;max-width:560px}.ch-crit button{text-align:left;border-radius:14px;border:2px solid #fff;padding:10px 14px;min-height:64px;color:#111827;font-size:16px}
+.ch-crit button b{display:block;font:800 20px var(--d)}.ch-crit button small{font-size:max(14px,var(--fs-min,15px))}.ch-crit .ok{background:#bbf7d0}.ch-crit .ko{background:#fecaca}
+.ch-c3{display:flex;gap:4px;flex-wrap:wrap}.ch-c3 button{min-height:44px;padding:0 10px;border-radius:10px;border:2px solid rgba(255,255,255,.7);background:transparent;color:#fff;font-weight:700}
+.ch-c3 button.ok{background:#bbf7d0;color:#14532d;border-color:#bbf7d0}.ch-c3 button.ko{background:#fecaca;color:#7f1d1d;border-color:#fecaca}
+.ch-rpe{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}.ch-rpe button{min-height:62px;border-radius:12px;border:2px solid rgba(255,255,255,.6);color:#111827;font-size:13px;line-height:1.1}.ch-rpe button b{display:block;font:800 24px var(--d)}
+.ch-rpe .r1,.ch-rpe .r2{background:#bbf7d0}.ch-rpe .r3,.ch-rpe .r4{background:#d9f99d}.ch-rpe .r5,.ch-rpe .r6{background:#fde68a}.ch-rpe .r7,.ch-rpe .r8{background:#fdba74}.ch-rpe .r9,.ch-rpe .r10{background:#fca5a5}
+.ch-rpe button.on{outline:4px solid #fff;outline-offset:1px;transform:scale(1.04)}
+.ch-dims{display:grid;gap:6px}.ch-dims div{display:flex;align-items:center;gap:4px}.ch-dims span{min-width:80px;font-weight:700}.ch-dims button{min-width:44px;min-height:44px;border-radius:10px;border:2px solid rgba(255,255,255,.7);background:transparent;color:#fff;font-weight:800}.ch-dims button.on{background:#fff;color:#1f2937}
+.ch-regle{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}.ch-regle button{min-height:64px;border-radius:12px;border:2px solid rgba(255,255,255,.7);background:transparent;color:#fff;text-align:left;padding:6px 10px;font-size:14px}.ch-regle button b{display:block;font-size:17px}
+.ch-regle button.conseil{border-style:dashed;border-color:#fde68a}.ch-regle button.on{background:#fff;color:#1f2937}
+.ch-form select{width:100%;min-height:52px;border-radius:12px;border:0;padding:0 10px;font:17px var(--t);color:#1f2937;background:#fff}
+.ch-rappel{background:rgba(255,255,255,.15);border-radius:12px;padding:8px 12px;max-width:520px}
 </style>
 <style>/* Lisibilité terrain : textes à 15 px minimum à l'écran ; tailles d'origine à l'impression. */@media print{:root{--fs-min:0px}}</style>
 <link rel="stylesheet" href="eps-charte-v1.css">

@@ -86,11 +86,11 @@ Lecture complète du code d'origine faite le 31/10/2026, sur l'état publié du 
 | FOR TIME à paliers N1 / N2 / N3 | Repris : exercice par exercice, temps de chaque palier, arrêt automatique au dernier. Sans limite de temps par défaut, limite facultative de 6 à 15 min |
 | Couleur de la minute (> 20 s, 10–20 s, < 10 s), « À venir » | Repris |
 | Compte à rebours | 3 s, comme l'origine |
-| Note d'exécution sur 4 | Reprise : fenêtre 1 Insuffisant · 2 À améliorer · 3 Bien · 4 Très bien après chaque exercice validé (après chaque effort en Tabata), avec « Passer ». En fin de WOD, la moyenne est proposée et reste modifiable |
-| Ressenti du WOD | Repris : 5 niveaux (Épuisé → Pas fatigué) et commentaire obligatoire (3 caractères minimum) |
-| Ressenti de séance | Repris : étoiles 1 à 5 et fatigue 1 à 5, dans « Fin de séance ». Le commentaire de séance est le « bilan » déjà présent |
+| Note d'exécution sur 4 | Reprise, puis précisée le 01/11/2026 : la note découle de 3 critères observables cochés par le coach (placement, respiration, amplitude), 1 + un point par critère réussi. En saisie complète, fenêtre après chaque exercice validé avec « Passer » ; en saisie légère, une seule fois en fin de WOD |
+| Ressenti du WOD | Repris, puis remplacé le 01/11/2026 par l'effort perçu de 1 à 10 (échelle CR10) et une décision de régulation obligatoire (je baisse, je garde, je monte, j'allonge la récup). Le commentaire obligatoire reste en saisie complète |
+| Ressenti de séance | Repris : étoiles 1 à 5 et fatigue 1 à 5, dans « Fin de séance » (saisie complète seulement). Le commentaire de séance est le « bilan » déjà présent |
 | Charge en kg | Reprise pour les exercices avec kettlebell, haltère ou barre, proposée d'après « Mes charges » |
-| Binôme : « À qui le tour ? » | Repris après chaque WOD : passer au partenaire (qui devient coach) ou rester |
+| Binôme : « À qui le tour ? » | Repris après chaque WOD : passer au partenaire (qui devient coach) ou rester. Le nom du coach et son conseil sont gardés avec le WOD : ils servent de preuve du rôle (AFL3) |
 | Reprise après veille ou rechargement | Reprise : l'état du WOD est gardé chaque seconde (sans aucun nom, seulement des identifiants). À la réouverture du carnet, un bandeau propose « Reprendre » ; le temps passé est compté, les rounds de Tabata manqués comptent 0 |
 | Écran allumé, avertissement si la tablette ne sait pas le garder | Repris |
 | Son / vibreur / muet | Repris, même clé `eps_sound_mode` |
@@ -116,7 +116,7 @@ Lecture complète du code d'origine faite le 31/10/2026, sur l'état publié du 
 
 1. Un seul compteur « +1 » par round en Tabata, au lieu d'un compteur par carte d'exercice : un seul exercice est actif à la fois.
 2. Les QR de l'ancienne appli n'ont pas de numéro de séance : ils ne remplissent ni l'appel ni la grille, ils restent dans leur liste.
-3. Les séances enregistrées avant le 31/10/2026 gardent leur ancienne échelle (note sur 5, ressenti sur 4), signalée à l'affichage. L'indice de la grille ramène les notes sur 4.
+3. Les séances enregistrées avant le 31/10/2026 gardent leur ancienne échelle (note sur 5, ressenti sur 4), et celles du 31/10 le ressenti sur 5 ; l'échelle est signalée à l'affichage. L'indice de la grille ramène les notes sur 4.
 4. La grille d'évaluation du référentiel, l'étoile GAREEPS, le jour J et le carnet chiffré n'existaient pas dans l'appli d'origine. Ils sont propres à cette appli.
 
 ## 4. Où sont les reprises dans le code

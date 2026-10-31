@@ -45,7 +45,13 @@ const RESS5=['','Épuisé','Très fatigué','Moyen','Légèrement fatigué','Pas
 const ETOILES=['','Séance difficile','Pas terrible','Correct','Bonne séance','Excellente séance'];
 const FATIGUE=['','Épuisé','Fatigué','Moyen','Légèrement fatigué','En forme'];
 // libellé du ressenti d'un WOD (ancien : 1 à 4, de facile à très difficile ; nouveau : 1 à 5, d'épuisé à pas fatigué)
-function ressentiTxt(n,ech){if(!n)return '—';return ech===5?n+'/5 '+RESS5[n]:n+'/4 (ancienne échelle)'}
+const RPE10=['','Très très facile','Facile','Modéré','Un peu dur','Dur','Dur +','Très dur','Très dur +','Très très dur','Maximal'];
+const REGLE={baisse:'baisser d’une version ou d’un niveau',garde:'garder le même travail',monte:'monter d’une version ou d’un niveau',recup:'allonger la récupération'};
+const CRIT3=['placement','respiration','amplitude'];
+function ressentiTxt(n,ech){if(!n)return '—';return ech===10?'effort '+n+'/10 '+RPE10[n]:ech===5?n+'/5 '+RESS5[n]:n+'/4 (ancienne échelle)'}
+// critères codés en un nombre pour le QR : 8 + placement×4 + respiration×2 + amplitude
+const critCode=c=>c&&c.some(x=>x===0||x===1)?8+(c[0]?4:0)+(c[1]?2:0)+(c[2]?1:0):0;
+const critDecode=n=>n>=8?[n&4?1:0,n&2?1:0,n&1?1:0]:null;
 // Nombre maximum d'exercices d'un WOD : format de l'épreuve = ce que fixe le référentiel ; sinon 8
 // (Tabata : pas plus d'exercices que de rounds).
 const MAX_EX=8;
@@ -130,7 +136,8 @@ const FCODE={tabata:'t',emom:'e',amrap:'a',fortime:'f',emom1:'p'},FDECODE={t:'ta
 function versQR(o){
   const q={a:'CTE',v:1,c:o.classe,e:o.eleve,s:o.seance,d:o.date,ts:Math.round(Date.now()/1000),k:o.parcours||''};
   if(o.mobile)q.m=o.mobile;if(o.dispense)q.dp=1;
-  q.w=(o.wods||[]).map(w=>[FCODE[w.format]||w.format,w.p,w.ordre==='h'?1:0,(w.exercices||[]).map(e=>[e.id,e.version||0,e.reps||0,e.noteExecution||0,e.charge||0]),w.fait?1:0,w.res||0,w.fc||0,w.ressenti||0,w.regulations||0,w.noRep||0,w.special?1:0,w.preset||'',w.echelleRessenti||0,cut(w.commentaire,80)]);
+  q.w=(o.wods||[]).map(w=>[FCODE[w.format]||w.format,w.p,w.ordre==='h'?1:0,(w.exercices||[]).map(e=>[e.id,e.version||0,e.reps||0,e.noteExecution||0,e.charge||0,critCode(e.criteres&&[e.criteres.placement,e.criteres.respiration,e.criteres.amplitude])]),w.fait?1:0,w.res||0,w.fc||0,w.ressenti||0,w.regulations||0,w.noRep||0,w.special?1:0,w.preset||'',w.echelleRessenti||0,cut(w.commentaire,80),w.dimensions?[w.dimensions.mu||0,w.dimensions.so||0,w.dimensions.te||0]:0,w.regulation||'',cut(w.coach,40),cut(w.conseil,80)]);
+  if(o.preuvesRoles&&o.preuvesRoles.wods)q.pr=[o.preuvesRoles.wods,(o.preuvesRoles.conseils||[]).slice(-2).map(x=>cut(x,50))];
   if(o.ressentiSeance)q.rs=[o.ressentiSeance.etoiles||0,o.ressentiSeance.fatigue||0];
   if(o.etoile)q.et=[o.etoile.conception||0,o.etoile.production||0,o.etoile.analyse||0];
   if(o.axePrioritaire)q.ax=o.axePrioritaire;
@@ -145,7 +152,8 @@ function versQR(o){
 // Objet compact du QR → même forme que le fichier (pour l'outil prof)
 function depuisQR(q){
   const o={app:'cross-training-eleves',classe:q.c,eleve:q.e,seance:q.s,date:q.d,ts:q.ts,parcours:q.k||'',mobile:q.m||'',dispense:!!q.dp,source:'qr',
-    wods:(q.w||[]).map(a=>({format:FDECODE[a[0]]||a[0],p:a[1],ordre:a[2]?'h':'v',exercices:(a[3]||[]).map(e=>({id:e[0],version:e[1],reps:e[2],noteExecution:e[3]||null,charge:e[4]||null})),fait:!!a[4],res:a[5]||null,fc:a[6]||null,ressenti:a[7]||null,regulations:a[8]||0,noRep:a[9]||0,special:!!a[10],preset:a[11]||'',echelleRessenti:a[12]||(a[7]?4:0),echelleNote:a[12]===5||!a[7]?4:5,commentaire:a[13]||''})),
+    wods:(q.w||[]).map(a=>({format:FDECODE[a[0]]||a[0],p:a[1],ordre:a[2]?'h':'v',exercices:(a[3]||[]).map(e=>{const c=critDecode(e[5]||0);return {id:e[0],version:e[1],reps:e[2],noteExecution:e[3]||null,charge:e[4]||null,criteres:c?{placement:c[0],respiration:c[1],amplitude:c[2]}:null}}),fait:!!a[4],res:a[5]||null,fc:a[6]||null,ressenti:a[7]||null,regulations:a[8]||0,noRep:a[9]||0,special:!!a[10],preset:a[11]||'',echelleRessenti:a[12]||(a[7]?4:0),echelleNote:(a[12]===5||a[12]===10||!a[7])?4:5,commentaire:a[13]||'',dimensions:a[14]?{mu:a[14][0]||null,so:a[14][1]||null,te:a[14][2]||null}:null,regulation:a[15]||'',coach:a[16]||'',conseil:a[17]||''})),
+    preuvesRoles:q.pr?{wods:q.pr[0],conseils:q.pr[1]||[]}:null,
     ressentiSeance:q.rs?{etoiles:q.rs[0]||null,fatigue:q.rs[1]||null}:null,
     etoile:q.et?{conception:q.et[0],production:q.et[1],analyse:q.et[2]}:null,axePrioritaire:q.ax||'',bilan:q.b||'',suite:q.su||'',etirements:!!q.st,
     roles:q.r?{supporter:!!q.r[0],assistant:!!q.r[1],coach:!!q.r[2]}:null,
@@ -165,5 +173,5 @@ function decrireWod(w,MOUV){
   const ex=(w.exercices||[]).map(e=>{const m=MOUV.find(x=>x.id===e.id)||{};return {nom:e.nom||m.nom||e.id,zone:e.zone||m.z||'',niveau:e.niveau||m.n||null,version:e.version||0,reps:e.reps||0,note:e.noteExecution||null,charge:e.charge||null}});
   return {titre:titreWod(W),format:ps?ps.nom:'',duree:dureeS(W),ex};
 }
-root.CTL={maxExercices,NOTE4,RESS5,ETOILES,FATIGUE,ressentiTxt,NIV_REPS,TABATA_REGLAGES,somme,decrireWod,VERSION_DONNEES,parcours,NOM_NIV,NOM_DEM,PRESETS,NOM_F,dureeS,mmss,titreWod,exoDuRound,FOURCHETTE,fcDans,niveauEmom,regularite,score,controleEpreuve,slug,nomFichier,versQR,depuisQR,chaineQR};
+root.CTL={RPE10,REGLE,CRIT3,critCode,critDecode,maxExercices,NOTE4,RESS5,ETOILES,FATIGUE,ressentiTxt,NIV_REPS,TABATA_REGLAGES,somme,decrireWod,VERSION_DONNEES,parcours,NOM_NIV,NOM_DEM,PRESETS,NOM_F,dureeS,mmss,titreWod,exoDuRound,FOURCHETTE,fcDans,niveauEmom,regularite,score,controleEpreuve,slug,nomFichier,versQR,depuisQR,chaineQR};
 })(typeof window!=='undefined'?window:globalThis);

@@ -1,6 +1,9 @@
 /* Lecteur des vidéos de démonstration (VIDEOS, dans videos.js).
    Tout élément portant data-video="<id du mouvement>" ouvre la vidéo par-dessus l'écran en cours
-   (éditeur de WOD, chrono…) sans le fermer. Lecture via youtube-nocookie ; internet nécessaire. */
+   (éditeur de WOD, chrono…) sans le fermer. Lecture via youtube-nocookie ; internet nécessaire.
+   Vidéos tournées par le professeur : dans videos.js, remplacer l'entrée d'un mouvement par
+   {pt:"<uuid PeerTube>",d:"0:08",c:"EPS Pompidou",t:"Squat"} (tube apps.education, comme le tennis de table)
+   ou {f:"videos/squat.mp4",…} pour un fichier rangé dans le dépôt (lu sans internet). */
 (function(){
   const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
   const V=()=>(typeof VIDEOS!=='undefined'&&VIDEOS)||{};
@@ -11,15 +14,17 @@
   window.ouvrirVideo=function(id){
     const v=V()[id];if(!v)return;fermer();
     const m=(typeof window.mvById==='function'&&window.mvById(id))||{nom:v.t};
-    const lien='https://www.youtube.com/watch?v='+encodeURIComponent(v.y);
+    const PT=v.base||'https://tube-education-physique-et-sportive.apps.education.fr';
+    const lien=v.f?v.f:v.pt?PT+'/w/'+encodeURIComponent(v.pt):'https://www.youtube.com/watch?v='+encodeURIComponent(v.y);
+    const src=v.pt?PT+'/videos/embed/'+encodeURIComponent(v.pt)+'?autoplay=1&title=0&warningTitle=0&peertubeLink=0':'https://www.youtube-nocookie.com/embed/'+encodeURIComponent(v.y)+'?autoplay=1&rel=0&playsinline=1';
     const d=document.createElement('div');d.className='vid-voile';
     d.innerHTML=`<div class="vid-fen" role="dialog" aria-modal="true" aria-label="Vidéo : ${esc(m.nom)}">
       <div class="vid-tete"><b>${esc(m.nom)}</b><button type="button" class="vid-x" data-vid="x" aria-label="Fermer la vidéo">✕</button></div>
-      ${navigator.onLine===false
+      ${v.f?`<div class="vid-cadre"><video src="${esc(v.f)}" controls autoplay muted playsinline loop></video></div>`:navigator.onLine===false
         ?'<p class="vid-hors">Pas de connexion internet : la vidéo ne peut pas s’ouvrir. Suis l’image et les consignes de la fiche.</p>'
-        :`<div class="vid-cadre"><iframe src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(v.y)}?autoplay=1&rel=0&playsinline=1" title="${esc(m.nom)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`}
+        :`<div class="vid-cadre"><iframe src="${src}" title="${esc(m.nom)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`}
       <p class="vid-src">${esc(v.t)} · chaîne ${esc(v.c)} · ${esc(v.d)}${v.a?'<br><i>Vidéo proche du mouvement : en cas de différence, la fiche de l’appli fait foi.</i>':''}</p>
-      <div class="vid-pied"><a href="${lien}" target="_blank" rel="noopener">Ouvrir sur YouTube</a><button type="button" class="vid-ok" data-vid="x">Fermer</button></div>
+      <div class="vid-pied"><a href="${lien}" target="_blank" rel="noopener">${v.f?"Ouvrir la vidéo":v.pt?"Ouvrir sur le tube EPS":"Ouvrir sur YouTube"}</a><button type="button" class="vid-ok" data-vid="x">Fermer</button></div>
     </div>`;
     d.addEventListener('click',e=>{if(e.target===d||e.target.closest('[data-vid="x"]'))fermer()});
     document.body.appendChild(d);ouvert=d;
@@ -41,7 +46,7 @@
 .vid-tete b{font-size:1.05rem}
 .vid-x{width:40px;height:40px;border-radius:50%;border:1px solid #d1d5db;background:#fff;font-size:18px;cursor:pointer}
 .vid-cadre{position:relative;width:100%;aspect-ratio:16/9;background:#000;border-radius:10px;overflow:hidden}
-.vid-cadre iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.vid-cadre iframe,.vid-cadre video{position:absolute;inset:0;width:100%;height:100%;border:0}
 .vid-hors{background:#fff7ed;border:1px solid #fdba74;border-radius:10px;padding:10px}
 .vid-src{font-size:.82rem;color:#4b5563;margin:8px 0}
 .vid-pied{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
