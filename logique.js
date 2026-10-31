@@ -102,7 +102,7 @@ const FCODE={tabata:'t',emom:'e',amrap:'a',fortime:'f',emom1:'p'},FDECODE={t:'ta
 function versQR(o){
   const q={a:'CTE',v:1,c:o.classe,e:o.eleve,s:o.seance,d:o.date,ts:Math.round(Date.now()/1000),k:o.parcours||''};
   if(o.mobile)q.m=o.mobile;if(o.dispense)q.dp=1;
-  q.w=(o.wods||[]).map(w=>[FCODE[w.format]||w.format,w.p,w.ordre==='h'?1:0,(w.exercices||[]).map(e=>[e.id,e.version||0,e.reps||0]),w.fait?1:0,w.res||0,w.fc||0,w.ressenti||0,w.regulations||0,w.noRep||0,w.special?1:0]);
+  q.w=(o.wods||[]).map(w=>[FCODE[w.format]||w.format,w.p,w.ordre==='h'?1:0,(w.exercices||[]).map(e=>[e.id,e.version||0,e.reps||0]),w.fait?1:0,w.res||0,w.fc||0,w.ressenti||0,w.regulations||0,w.noRep||0,w.special?1:0,w.preset||'']);
   if(o.etoile)q.et=[o.etoile.conception||0,o.etoile.production||0,o.etoile.analyse||0];
   if(o.axePrioritaire)q.ax=o.axePrioritaire;
   if(o.bilan)q.b=cut(o.bilan,160);if(o.suite)q.su=cut(o.suite,160);
@@ -116,7 +116,7 @@ function versQR(o){
 // Objet compact du QR → même forme que le fichier (pour l'outil prof)
 function depuisQR(q){
   const o={app:'cross-training-eleves',classe:q.c,eleve:q.e,seance:q.s,date:q.d,ts:q.ts,parcours:q.k||'',mobile:q.m||'',dispense:!!q.dp,source:'qr',
-    wods:(q.w||[]).map(a=>({format:FDECODE[a[0]]||a[0],p:a[1],ordre:a[2]?'h':'v',exercices:(a[3]||[]).map(e=>({id:e[0],version:e[1],reps:e[2]})),fait:!!a[4],res:a[5]||null,fc:a[6]||null,ressenti:a[7]||null,regulations:a[8]||0,noRep:a[9]||0,special:!!a[10]})),
+    wods:(q.w||[]).map(a=>({format:FDECODE[a[0]]||a[0],p:a[1],ordre:a[2]?'h':'v',exercices:(a[3]||[]).map(e=>({id:e[0],version:e[1],reps:e[2]})),fait:!!a[4],res:a[5]||null,fc:a[6]||null,ressenti:a[7]||null,regulations:a[8]||0,noRep:a[9]||0,special:!!a[10],preset:a[11]||''})),
     etoile:q.et?{conception:q.et[0],production:q.et[1],analyse:q.et[2]}:null,axePrioritaire:q.ax||'',bilan:q.b||'',suite:q.su||'',etirements:!!q.st,
     roles:q.r?{supporter:!!q.r[0],assistant:!!q.r[1],coach:!!q.r[2]}:null,
     tableau:q.tp?{age:q.tp[0]||null,fcRepos:q.tp[1]||null,mobile:q.tp[2]||'',pourquoi:q.tp[3]||'',charges:q.tp[4]||null,amrap:q.tp[5]||null}:null,
@@ -130,5 +130,10 @@ async function chaineQR(q){
   return 'CTE0:'+b64url(raw);
 }
 
-root.CTL={VERSION_DONNEES,parcours,NOM_NIV,NOM_DEM,PRESETS,NOM_F,dureeS,mmss,titreWod,exoDuRound,FOURCHETTE,fcDans,niveauEmom,regularite,score,controleEpreuve,slug,nomFichier,versQR,depuisQR,chaineQR};
+function decrireWod(w,MOUV){
+  const W={f:w.format||w.f,p:w.p||{}},ps=PRESETS.find(x=>x.id===w.preset);
+  const ex=(w.exercices||[]).map(e=>{const m=MOUV.find(x=>x.id===e.id)||{};return {nom:e.nom||m.nom||e.id,zone:e.zone||m.z||'',niveau:e.niveau||m.n||null,version:e.version||0,reps:e.reps||0}});
+  return {titre:titreWod(W),format:ps?ps.nom:'',duree:dureeS(W),ex};
+}
+root.CTL={decrireWod,VERSION_DONNEES,parcours,NOM_NIV,NOM_DEM,PRESETS,NOM_F,dureeS,mmss,titreWod,exoDuRound,FOURCHETTE,fcDans,niveauEmom,regularite,score,controleEpreuve,slug,nomFichier,versQR,depuisQR,chaineQR};
 })(typeof window!=='undefined'?window:globalThis);
