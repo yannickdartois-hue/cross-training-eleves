@@ -33,7 +33,7 @@ const PRESETS=[
  {id:'fp2',nom:'FOR TIME paliers N2 (8 → 1)',f:'fortime',p:{pal:[8,7,6,5,4,3,2,1],cap:0},nb:3,aide:'8, 7, 6… jusqu’à 1 · 36 rép. par exercice'},
  {id:'fp3',nom:'FOR TIME paliers N3 (10 → 1)',f:'fortime',p:{pal:[10,9,8,7,6,5,4,3,2,1],cap:0},nb:3,aide:'10, 9, 8… jusqu’à 1 · 55 rép. par exercice'},
  {id:'ft',nom:'FOR TIME 3 tours',f:'fortime',p:{tours:3,cap:6},nb:3,aide:'le plus vite possible, 6 min maximum'},
- {id:'e1',nom:'EMOM+1',f:'emom1',p:{min:10,dep:6},nb:1,aide:'une répétition de plus chaque minute'}
+ {id:'e1',nom:'EMOM+1',f:'emom1',p:{min:6,dep:6},nb:3,aide:'tous les exercices chaque minute, validés un par un ; une répétition de plus à chaque minute'}
 ];
 // Réglages repris de l'appli chrono « cross-training-pompidou »
 const NIV_REPS=[4,6,8,10,12]; // N0 à N4 : répétitions par exercice (AMRAP, EMOM) ou au départ (EMOM+1)
@@ -49,7 +49,7 @@ const mmss=s=>{s=Math.max(0,Math.round(s));return Math.floor(s/60)+' min'+(s%60?
 function titreWod(W){const p=W.p||{};
   if(W.f==='tabata')return 'TABATA '+p.e+'/'+p.r+' × '+p.n;
   if(W.f==='emom')return 'EMOM '+p.min+' min';
-  if(W.f==='emom1')return 'EMOM+1 '+p.min+' min (départ '+(p.dep||3)+')';
+  if(W.f==='emom1')return 'EMOM+1 '+p.min+' min';
   if(W.f==='amrap')return 'AMRAP '+p.min+' min';
   if(W.f==='fortime')return p.pal?'FOR TIME '+p.pal[0]+' → '+p.pal[p.pal.length-1]+(p.cap?' (cap '+p.cap+' min)':''):'FOR TIME '+(p.tours||3)+' tours';
   return W.f}
@@ -69,6 +69,8 @@ function regularite(rounds){const L=(rounds||[]).filter(x=>x!=null);if(L.length<
 function score(W){const r=W.res||{};
   if(W.f==='tabata'){const g=regularite(r.rounds);return g?g.total+' rép. ('+g.min+' à '+g.max+' par round)':''}
   if(W.f==='emom'){const n=niveauEmom(r.restants);return n?'repos moyen '+n.moy+' s'+(n.niv?' (N'+n.niv+')':' (trop dur)'):''}
+  if(W.f==='emom1'&&r.minutes){const L=r.minutes.filter(Boolean),ok=L.filter(m=>m.ok),tm=ok.length?Math.round(ok.reduce((a,m)=>a+m.t,0)/ok.length):0;
+    return L.length?ok.length+' / '+(W.p.min||L.length)+' min validées ('+r.minutes.map(m=>m?(m.ok?'V':'F'):'·').join('')+')'+(tm?' · séquence moy. '+tm+' s':''):''}
   if(W.f==='emom1')return r.derniere?'dernière minute réussie : '+r.derniere+' ('+((W.p.dep||3)+r.derniere-1)+' rép.)':'';
   if(W.f==='amrap')return r.tours!=null?r.tours+' tours + '+(r.plus||0):'';
   if(W.f==='fortime'){const nb=W.p&&W.p.pal?W.p.pal.length:(W.p&&W.p.tours)||3;

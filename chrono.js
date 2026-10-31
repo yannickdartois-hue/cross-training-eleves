@@ -24,6 +24,10 @@ function lancer(W,opts){
   const PREP=10,p=W.p||{},ex=W.ex||[];
   const R={rounds:[],restants:[],tours:0,plus:0,temps:null,derniere:0,norep:0,regul:0,versions:ex.map(e=>e.v||0)};
   let t0=null,pauseA=null,pauseMs=0,fini=false,tick=null,dernierS=-1,phaseVue='',minuteFaite=-1,arret=false;
+  // EMOM+1 (méthode de l'appli Cross Training Pompidou) : chaque minute, tous les exercices à la suite, validés un par un ;
+  // reps = reps de départ de l'exercice + (minute − 1) ; une minute ratée n'arrête pas le WOD.
+  let seq=0,echec=null,curMin=0;if(W.f==='emom1')R.minutes=[];
+  const repsE1=(j,i)=>((ex[j]&&ex[j].reps)||p.dep||6)+i;
   // plan des phases [type, durée s, index] ; prep compris
   const plan=[['prep',PREP]];
   if(W.f==='tabata'){for(let i=0;i<p.n;i++){plan.push(['eff',p.e,i]);if(i<p.n-1)plan.push(['rep',p.r,i])}}
@@ -39,7 +43,7 @@ function lancer(W,opts){
   const exo=i=>{const e=ex[i];return e?(opts.mv(e.m)||{nom:e.m}):null};
   const verLib=x=>x<0?'version −':x>0?'version +':'version normale';
   function exoHTML(i,petit){const e=ex[i],m=exo(i);if(!m)return '';
-    return `<div class="ch-exo${petit?' petit':''}"><div class="ch-img"${window.aVideo&&aVideo(e.m)?` data-video="${e.m}" title="Voir la vidéo"`:''}>${opts.visuel(m)}${window.aVideo&&aVideo(e.m)?'<span class="bt-video mini" aria-hidden="true">▶</span>':''}</div><div><b>${esc(m.nom)}</b>${W.f==='fortime'&&p.pal?`<span>${p.pal[Math.min(R.tours,NBFT-1)]} rép.</span>`:W.f==='emom'||W.f==='fortime'||W.f==='amrap'?`<span>${e.reps||''} rép.</span>`:''}<span class="ch-ver">${verLib(R.versions[i])}</span>
+    return `<div class="ch-exo${petit?' petit':''}"><div class="ch-img"${window.aVideo&&aVideo(e.m)?` data-video="${e.m}" title="Voir la vidéo"`:''}>${opts.visuel(m)}${window.aVideo&&aVideo(e.m)?'<span class="bt-video mini" aria-hidden="true">▶</span>':''}</div><div><b>${esc(m.nom)}</b>${W.f==='emom1'?`<span>${repsE1(i,curMin)} rép.</span>`:W.f==='fortime'&&p.pal?`<span>${p.pal[Math.min(R.tours,NBFT-1)]} rép.</span>`:W.f==='emom'||W.f==='fortime'||W.f==='amrap'?`<span>${e.reps||''} rép.</span>`:''}<span class="ch-ver">${verLib(R.versions[i])}</span>
       <div class="ch-reg"><button type="button" data-ch="moins" data-i="${i}" aria-label="Version plus facile">−</button><button type="button" data-ch="plusv" data-i="${i}" aria-label="Version plus difficile">+</button></div></div></div>`}
   function peindre(){
     if(fini)return;
@@ -55,16 +59,27 @@ function lancer(W,opts){
     const cle=o.k+'';if(cle!==phaseVue){phaseVue=cle;
       if(typ==='eff'||typ==='min'||typ==='amrap'||typ==='ft')bipGo();
       if(typ==='rep')son(520,.35,.35);
-      if(typ==='min'&&i>0&&minuteFaite<i-1){/* minute précédente non terminée */R.restants[i-1]=0;
-        if(W.f==='emom1'){R.derniere=i-1;terminer();return}}
+      if(typ==='min'&&W.f==='emom'&&i>0&&minuteFaite<i-1){/* minute précédente non terminée */R.restants[i-1]=0}
+      if(typ==='min'&&W.f==='emom1'){if(i>0&&!R.minutes[i-1])R.minutes[i-1]={ok:0,stop:Math.min(seq,ex.length-1),partiel:0,auto:1};seq=0;echec=null}
     }
     let couleur='prep',titre='Prépare-toi',corps='',grand=mmss(o.reste),sous='';
     if(typ==='prep'){const e0=W.f==='tabata'?exoDuRound(0):0;corps=exoHTML(e0);sous=esc(opts.titreWod||'');}
     else if(typ==='eff'){couleur='eff';titre='EFFORT';sous='Round '+(i+1)+' / '+p.n;const k=exoDuRound(i);corps=exoHTML(k)+compteur(R.rounds[i]||0,'rép. ce round');}
     else if(typ==='rep'){couleur='rep';titre='REPOS';sous='Round '+(i+1)+' : '+(R.rounds[i]||0)+' rép. · ensuite :';corps=exoHTML(exoDuRound(i+1),true);}
-    else if(typ==='min'){couleur=minuteFaite>=i?'rep':'eff';titre='Minute '+(i+1)+' / '+p.min;
-      const n=W.f==='emom1'?(p.dep||3)+i:null;
-      sous=minuteFaite>=i?'Repos : '+(R.restants[i]||0)+' s restantes':(W.f==='emom1'?n+' répétitions':'Enchaîne : '+ex.map((e,j)=>(e.reps||'')+' '+((exo(j)||{}).nom||'')).join(' · '));
+    else if(typ==='min'&&W.f==='emom1'){curMin=i;const M=R.minutes[i];couleur=M?'rep':zone(o.reste);titre='Minute '+(i+1)+' / '+p.min;
+      sous=ex.map((e,j)=>repsE1(j,i)+' '+((exo(j)||{}).nom||'')).join(' · ');
+      if(M&&M.ok)corps=`<div class="ch-bilan-min"><b>✓ Séquence terminée</b><span>${M.t} s d’effort · ${M.repos} s de repos</span></div>`;
+      else if(M)corps=`<div class="ch-bilan-min ko"><b>✗ Non terminé</b><span>${M.partiel} / ${repsE1(M.stop,i)} rép. sur ${esc((exo(M.stop)||{}).nom||'')}</span></div>`;
+      else if(echec)corps=`<div class="ch-bilan-min ko"><b>✗ Non terminé · ${esc((exo(echec.j)||{}).nom||'')}</b><span>Répétitions faites sur ${repsE1(echec.j,i)} :</span>
+        <div class="ch-part"><button type="button" data-ch="partm" aria-label="Une de moins">−</button><output>${echec.n}</output><button type="button" data-ch="partp" aria-label="Une de plus">+</button></div>
+        <div class="ch-boutons"><button type="button" class="ch-moyen" data-ch="partann">← Annuler</button><button type="button" class="ch-gros ch-ko" data-ch="partok">Confirmer</button></div></div>`;
+      else{const j=Math.min(seq,ex.length-1),nx=j+1<ex.length?j+1:-1;
+        corps=`<p class="ch-lab">Exercice ${j+1} / ${ex.length}</p>${exoHTML(j)}
+        <div class="ch-boutons"><button type="button" class="ch-gros ch-fini" data-ch="seqok">✓ Validé</button><button type="button" class="ch-moyen ch-ko" data-ch="seqko">✗ Non terminé</button>${seq>0?'<button type="button" class="ch-moyen" data-ch="sequndo">↩ Annuler</button>':''}</div>
+        ${nx>=0?`<p class="ch-avenir">→ À venir : <b>${esc((exo(nx)||{}).nom||'')}</b> · ${repsE1(nx,i)} rép.</p>`:''}`}
+      corps+=`<div class="ch-pts">${Array.from({length:p.min},(_,k)=>{const x=R.minutes[k];return `<span class="${x?(x.ok?'ok':'ko'):k===i?'enc':''}">${k+1}</span>`}).join('')}</div>`;}
+    else if(typ==='min'){couleur=minuteFaite>=i?'rep':zone(o.reste);titre='Minute '+(i+1)+' / '+p.min;
+      sous=minuteFaite>=i?'Repos : '+(R.restants[i]||0)+' s restantes':'Enchaîne : '+ex.map((e,j)=>(e.reps||'')+' '+((exo(j)||{}).nom||'')).join(' · ');
       corps=(minuteFaite>=i?'':`<button type="button" class="ch-gros ch-fini" data-ch="fini" data-i="${i}">Fini !<small>touche dès que la dernière répétition est faite</small></button>`)+`<div class="ch-liste">${ex.map((e,j)=>exoHTML(j,true)).join('')}</div>`;}
     else if(typ==='amrap'){couleur='eff';titre='AMRAP';sous=R.tours+' tours + '+R.plus+' rép.';
       corps=`<div class="ch-boutons"><button type="button" class="ch-gros" data-ch="tour">+1 tour</button><button type="button" class="ch-moyen" data-ch="rep">+1 rép.</button></div><div class="ch-liste">${ex.map((e,j)=>exoHTML(j,true)).join('')}</div>`;}
@@ -78,11 +93,13 @@ function lancer(W,opts){
       <div class="ch-bas"><button type="button" class="ch-norep" data-ch="norep">No rep <b>${R.norep}</b></button><button type="button" data-ch="pause">${pauseA?'Reprendre':'Pause'}</button><button type="button" data-ch="sonmode">${libMode()}</button><button type="button" data-ch="stop" class="${arret?'confirme':''}">${arret?'Sûr ? Retoucher':'Arrêter'}</button></div></div>`;
   }
   function exoDuRound(i){return root.CTL.exoDuRound(W,i)}
+  // couleur de la minute selon le temps restant (comme l'appli d'origine) : > 20 s, 10 à 20 s, < 10 s
+  const zone=r=>r>20?'z1':r>10?'z2':'z3';
   const compteur=(n,l)=>`<button type="button" class="ch-gros ch-plus" data-ch="plus">+1<small>${n} ${l}</small></button><button type="button" class="ch-moins1" data-ch="moins1">− 1</button>`;
   function terminer(){if(fini)return;fini=true;clearInterval(tick);eveil(false);bipFin();
     const t=ecoule();
     if(W.f==='fortime'&&R.temps==null){if(p.pal&&!p.cap)R.arrete=Math.round(Math.max(0,t-PREP));else R.temps=Math.round(Math.min(t-PREP,(p.pal?p.cap:(p.cap||6))*60))}
-    if(W.f==='emom1'&&!R.derniere)R.derniere=minuteFaite+1;
+    if(W.f==='emom1'){const o=ou(Math.min(t,total-.01)),k=o&&o.ph[0]==='min'?o.ph[2]:(t>=total?p.min-1:-1);for(let m=0;m<=k;m++)if(!R.minutes[m])R.minutes[m]={ok:0,stop:m===k?Math.min(seq,ex.length-1):0,partiel:m===k&&echec?echec.n:0,auto:1}}
     if(W.f==='emom')for(let i=0;i<p.min;i++)if(R.restants[i]==null)R.restants[i]=0;
     if(W.f==='tabata'){const fait=Math.min(p.n,Math.ceil(Math.max(0,t-PREP)/(p.e+p.r)));for(let i=0;i<fait;i++)if(R.rounds[i]==null)R.rounds[i]=0}
     v.innerHTML=`<div class="chr fin"><p class="ch-titre">Terminé</p><p class="ch-sous">${esc(opts.athlete||'')} · ${esc(opts.titreWod||'')}</p>
@@ -101,7 +118,15 @@ function lancer(W,opts){
     else if(a==='moins1'&&o&&o.ph[0]==='eff'){const i=o.ph[2];R.rounds[i]=Math.max(0,(R.rounds[i]||0)-1)}
     else if(a==='norep')R.norep++;
     else if(a==='moins'||a==='plusv'){const i=+b.dataset.i,nv=Math.max(-1,Math.min(1,R.versions[i]+(a==='moins'?-1:1)));if(nv!==R.versions[i]){R.versions[i]=nv;R.regul++}}
-    else if(a==='fini'&&o&&o.ph[0]==='min'){const i=+b.dataset.i;if(minuteFaite<i){minuteFaite=i;R.restants[i]=Math.round(o.reste);if(W.f==='emom1')R.derniere=i+1}}
+    else if(a==='fini'&&o&&o.ph[0]==='min'){const i=+b.dataset.i;if(minuteFaite<i){minuteFaite=i;R.restants[i]=Math.round(o.reste)}}
+    else if(a==='seqok'&&o&&o.ph[0]==='min'&&!R.minutes[o.ph[2]]){const i=o.ph[2];son(880,.07,.3);seq++;
+      if(seq>=ex.length){R.minutes[i]={ok:1,t:Math.max(1,Math.round(o.dans)),repos:Math.max(0,Math.round(o.reste))};son(660,.1,.4);setTimeout(()=>son(880,.15,.5),150)}}
+    else if(a==='sequndo'&&seq>0)seq--;
+    else if(a==='seqko'&&o&&o.ph[0]==='min')echec={j:Math.min(seq,ex.length-1),n:0};
+    else if(a==='partm'&&echec)echec.n=Math.max(0,echec.n-1);
+    else if(a==='partp'&&echec)echec.n++;
+    else if(a==='partann')echec=null;
+    else if(a==='partok'&&echec&&o&&o.ph[0]==='min'){R.minutes[o.ph[2]]={ok:0,stop:echec.j,partiel:echec.n};echec=null}
     else if(a==='tour')R.tours++,R.plus=0;
     else if(a==='rep')R.plus++;
     else if(a==='tourft'){R.tours++;if(R.tours>=NBFT){R.temps=Math.round(t-PREP);terminer();return}}
@@ -112,7 +137,7 @@ function lancer(W,opts){
     else if(a==='res'){ressenti=+b.dataset.v;v.querySelectorAll('[data-ch="res"]').forEach(x=>x.classList.toggle('on',x===b));return}
     else if(a==='annuler'){fermer();opts.onAnnule&&opts.onAnnule();return}
     else if(a==='enreg'){const fc=+(v.querySelector('#ch-fc').value||0)||null;fermer();
-      const res={rounds:R.rounds,restants:R.restants,tours:R.tours,plus:R.plus,temps:R.temps,derniere:R.derniere,arrete:R.arrete||null};
+      const res={rounds:R.rounds,restants:R.restants,tours:R.tours,plus:R.plus,temps:R.temps,arrete:R.arrete||null};if(W.f==='emom1')res.minutes=R.minutes;
       opts.onFin({res,fc,ressenti:ressenti||null,regulations:R.regul,noRep:R.norep,versions:R.versions,notes});return}
     peindre()});
   // départ : un toucher (autorise le son sur iPad)

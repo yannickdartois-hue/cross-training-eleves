@@ -21,10 +21,10 @@ Fichiers : `CT_1G3_MartinL_S4.json`. QR : `CTE1:` + JSON compact compressé (`lo
 
 `videos.js` associe à 76 des 81 mouvements une vidéo YouTube courte (souvent moins d'une minute), surtout en français : 15-Minute Challenge, EPS Nancy-Metz, MUST COACH, WODMOOV, CrossFit… Le bouton ▶ sur l'image ouvre la vidéo en `youtube-nocookie`. Il faut internet pour la lire ; sans connexion, un message renvoie à la fiche. Les vidéos marquées `a:1` sont seulement proches du mouvement de la fiche, et c'est la fiche qui fait foi. Sans vidéo : arlaud, course, sauts-groupes-banc, accroupi-genoux, gainage-mains-cuisses. Pour changer une vidéo, il suffit de remplacer son identifiant `y` dans `videos.js`. La source est `ct/src/videos.py`.
 
-## Réglages repris de l'appli chrono d'origine (cross-training-pompidou)
+## Réglages repris de l’appli Cross Training Pompidou (Yannick Dartois, dépôt cross-training-pompidou, non modifié) — détail : ORIGINE-cross-training-pompidou.md
 
 - TABATA « à régler » et découverte : effort/repos 20/10, 30/10, 20/20, 40/20, 10/20, 30/30, 45/15, de 1 à 40 cycles ; en ordre horizontal, l'appli prévient si le nombre de cycles n'est pas divisible par le nombre d'exercices.
 - AMRAP et EMOM : niveau N0 à N4 (4, 6, 8, 10 ou 12 rép. pour tous les exercices, chacun reste réglable) ; durée libre de 1 à 30 min, raccourcis 6 et 10 min.
-- EMOM+1 : répétitions de départ N0 à N4, durée réglable.
+- EMOM+1 (mécanique d’origine) : plusieurs exercices validés un par un chaque minute, +1 répétition par minute, « Non terminé » avec les répétitions faites, le WOD continue ; score = minutes validées (V/F). Départ N0 à N4, durée de 1 à 60 min.
 - FOR TIME à paliers dégressifs : N1 6→1 (21 rép.), N2 8→1 (36), N3 10→1 (55), sans limite de temps ou avec cap de 6 à 15 min. Le « FOR TIME 3 tours » reste disponible.
 - Son / vibreur / muet dans le chrono, avec la même clé `eps_sound_mode` que l'ancienne appli : le réglage est conservé.
