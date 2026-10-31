@@ -17,12 +17,12 @@ const PRESETS=[
  {id:'tm1',nom:'TABATA modéré N1',f:'tabata',p:{e:30,r:30,n:8},nb:4,ordre:'v',mob:'mod',ep:1,aide:'2 × 4 exercices, 3 N2 + 1 N1 · 8 min'},
  {id:'tm2',nom:'TABATA modéré N2',f:'tabata',p:{e:30,r:20,n:10},nb:5,ordre:'v',mob:'mod',ep:1,aide:'2 × 5 exercices, 3 N2 + 2 N1 · 8 min 20'},
  {id:'tm3',nom:'TABATA modéré N3',f:'tabata',p:{e:25,r:15,n:12},nb:4,ordre:'v',mob:'mod',ep:1,aide:'3 × 4 exercices, 3 N2 + 1 N1 · 8 min'},
- {id:'em8',nom:'EMOM modéré 8 min',f:'emom',p:{min:8},nb:3,mob:'mod',ep:1,aide:'3 à 4 exercices enchaînés, 7 répétitions minimum'},
+ {id:'em8',nom:'EMOM modéré 8 min',f:'emom',p:{min:8},nb:3,max:4,mob:'mod',ep:1,aide:'3 à 4 exercices enchaînés, 7 répétitions minimum'},
  {id:'te1',nom:'TABATA élevé N1',f:'tabata',p:{e:20,r:20,n:8},nb:4,ordre:'v',mob:'elev',ep:1,aide:'2 × 4 exercices · 5 min 20'},
  {id:'te2',nom:'TABATA élevé N2',f:'tabata',p:{e:25,r:15,n:8},nb:2,ordre:'v',mob:'elev',ep:1,aide:'4 × 2 exercices · 5 min 20'},
  {id:'te3',nom:'TABATA élevé N3',f:'tabata',p:{e:20,r:10,n:10},nb:5,ordre:'v',mob:'elev',ep:1,aide:'2 × 5 exercices · 5 min'},
  {id:'ts',nom:'TABATA spécial (une zone)',f:'tabata',p:{e:20,r:10,n:10},nb:5,ordre:'v',mob:'elev',ep:1,special:1,aide:'une seule zone : INF, SUP, TRONC ou CARDIO'},
- {id:'em5',nom:'EMOM élevé 5 min',f:'emom',p:{min:5},nb:3,mob:'elev',ep:1,aide:'3 à 4 exercices de niveau 3'},
+ {id:'em5',nom:'EMOM élevé 5 min',f:'emom',p:{min:5},nb:3,max:4,mob:'elev',ep:1,aide:'3 à 4 exercices de niveau 3'},
  {id:'t0',nom:'TABATA découverte 20/10 × 8',f:'tabata',p:{e:20,r:10,n:8},nb:2,ordre:'v',libre:1,aide:'le Tabata d’origine · 4 min'},
  {id:'tl',nom:'TABATA à régler',f:'tabata',p:{e:30,r:10,n:8},nb:4,ordre:'v',libre:1,aide:'effort/repos au choix (20/10, 30/10, 40/20, 45/15…) et 1 à 40 cycles'},
  {id:'t20',nom:'TABATA 20/20 × 8',f:'tabata',p:{e:20,r:20,n:8},nb:4,ordre:'v',libre:1,aide:'5 min 20'},
@@ -46,6 +46,11 @@ const ETOILES=['','Séance difficile','Pas terrible','Correct','Bonne séance','
 const FATIGUE=['','Épuisé','Fatigué','Moyen','Légèrement fatigué','En forme'];
 // libellé du ressenti d'un WOD (ancien : 1 à 4, de facile à très difficile ; nouveau : 1 à 5, d'épuisé à pas fatigué)
 function ressentiTxt(n,ech){if(!n)return '—';return ech===5?n+'/5 '+RESS5[n]:n+'/4 (ancienne échelle)'}
+// Nombre maximum d'exercices d'un WOD : format de l'épreuve = ce que fixe le référentiel ; sinon 8
+// (Tabata : pas plus d'exercices que de rounds).
+const MAX_EX=8;
+function maxExercices(W){const ps=PRESETS.find(x=>x.id===W.preset)||{};if(ps.ep)return ps.max||ps.nb||MAX_EX;
+  return W.f==='tabata'?Math.max(1,Math.min(MAX_EX,(W.p&&W.p.n)||MAX_EX)):MAX_EX}
 const NOM_F={tabata:'TABATA',emom:'EMOM',amrap:'AMRAP',fortime:'FOR TIME',emom1:'EMOM+1'};
 function dureeS(W){const p=W.p||{};
   if(W.f==='tabata')return p.n*(p.e+p.r);
@@ -160,5 +165,5 @@ function decrireWod(w,MOUV){
   const ex=(w.exercices||[]).map(e=>{const m=MOUV.find(x=>x.id===e.id)||{};return {nom:e.nom||m.nom||e.id,zone:e.zone||m.z||'',niveau:e.niveau||m.n||null,version:e.version||0,reps:e.reps||0,note:e.noteExecution||null,charge:e.charge||null}});
   return {titre:titreWod(W),format:ps?ps.nom:'',duree:dureeS(W),ex};
 }
-root.CTL={NOTE4,RESS5,ETOILES,FATIGUE,ressentiTxt,NIV_REPS,TABATA_REGLAGES,somme,decrireWod,VERSION_DONNEES,parcours,NOM_NIV,NOM_DEM,PRESETS,NOM_F,dureeS,mmss,titreWod,exoDuRound,FOURCHETTE,fcDans,niveauEmom,regularite,score,controleEpreuve,slug,nomFichier,versQR,depuisQR,chaineQR};
+root.CTL={maxExercices,NOTE4,RESS5,ETOILES,FATIGUE,ressentiTxt,NIV_REPS,TABATA_REGLAGES,somme,decrireWod,VERSION_DONNEES,parcours,NOM_NIV,NOM_DEM,PRESETS,NOM_F,dureeS,mmss,titreWod,exoDuRound,FOURCHETTE,fcDans,niveauEmom,regularite,score,controleEpreuve,slug,nomFichier,versQR,depuisQR,chaineQR};
 })(typeof window!=='undefined'?window:globalThis);

@@ -237,8 +237,9 @@ function peindreEditeur(){
   const charge=m=>['kb','halt','barre'].includes(m.m);
   const nivActif=W.ex.length&&W.ex.every(e=>e.reps===W.ex[0].reps)?CTL.NIV_REPS.indexOf(W.ex[0].reps):-1;
   const boutonsNiv=(act,actif)=>`<span class="niv5">${CTL.NIV_REPS.map((r,n)=>`<button type="button" class="${actif===n?'on':''}" data-act="${act}" data-v="${n}">N${n}<small>${r} rép.</small></button>`).join('')}</span>`;
-  const dur=CTL.dureeS(W);
-  fen(`<h3>${esc(CTL.titreWod(W))}${W.special?' · spécial':''}</h3><p class="small muted">${esc(ps.aide||'')} · ${dur?esc(CTL.mmss(dur)):'sans limite de temps'}${ps.nb?' · '+ps.nb+' exercice'+(ps.nb>1?'s':'')+' conseillé'+(ps.nb>1?'s':''):''}</p>
+  const dur=CTL.dureeS(W),mx=CTL.maxExercices(W),plein=W.ex.length>=mx,trop=W.ex.length>mx,pris=new Set(W.ex.map(e=>e.m));
+  fen(`<h3>${esc(CTL.titreWod(W))}${W.special?' · spécial':''}</h3><p class="small muted">${esc(ps.aide||'')}${dur&&/min/.test(ps.aide||'')&&!ps.libre?'':' · '+(dur?esc(CTL.mmss(dur)):'sans limite de temps')}</p>
+    <p class="nbex${trop?' avert':''}"><b>${W.ex.length} / ${mx} exercice${mx>1?'s':''}</b>${ps.nb&&ps.nb<mx?' · '+ps.nb+' conseillé'+(ps.nb>1?'s':''):''}${trop?' · trop d’exercices : retire-en '+(W.ex.length-mx)+' pour enregistrer':plein?' · maximum atteint':''}</p>
     ${W.f==='tabata'?`<div class="rangee"><span class="small">Ordre</span><button type="button" class="bt mini ${W.ordre!=='h'?'noir':''}" data-act="ordre" data-v="v">Vertical 1-2-3-4-1…</button><button type="button" class="bt mini ${W.ordre==='h'?'noir':''}" data-act="ordre" data-v="h">Horizontal 1-1-2-2…</button></div>`:''}
     ${W.f==='tabata'&&ps.libre?`<div class="rangee"><span class="small">Effort / repos</span>${CTL.TABATA_REGLAGES.map(([e,r])=>`<button type="button" class="bt mini ${W.p.e===e&&W.p.r===r?'noir':''}" data-act="etr" data-v="${e}/${r}">${e}/${r}</button>`).join('')}</div>
     <div class="rangee"><span class="small">Cycles</span><button type="button" class="bt mini" data-act="ecyc" data-v="-1" aria-label="Un cycle de moins">−</button><b>${W.p.n}</b><button type="button" class="bt mini" data-act="ecyc" data-v="1" aria-label="Un cycle de plus">+</button>${W.ordre==='h'&&W.ex.length>1&&W.p.n%W.ex.length?`<span class="small avert">En horizontal, prends un nombre de cycles divisible par ${W.ex.length} (${W.ex.length} exercices).</span>`:''}</div>`:''}
@@ -250,7 +251,7 @@ function peindreEditeur(){
       <span class="ver"><button type="button" class="${e.v<0?'on':''}" data-act="ever" data-k="${k}" data-v="-1">−</button><button type="button" class="${!e.v?'on':''}" data-act="ever" data-k="${k}" data-v="0">=</button><button type="button" class="${e.v>0?'on':''}" data-act="ever" data-k="${k}" data-v="1">+</button></span>
       <button type="button" class="x" data-act="edel" data-k="${k}" aria-label="Retirer">✕</button></li>`}).join('')||'<li class="muted small">Touche les exercices ci-dessous pour les ajouter.</li>'}</ol>
     <div class="zones">${[['','Toutes']].concat(Object.keys(ZONES).map(z=>[z,ZONES[z].nom])).map(z=>`<button type="button" class="${ED.zone===z[0]?'on':''}" data-act="ezone" data-v="${z[0]}">${esc(z[1])}</button>`).join('')}</div>
-    <div class="mvs">${L.map(m=>`<div class="mvc"><button type="button" class="mvb" data-act="eadd" data-v="${m.id}"><span class="mv-v">${mvVisuel(m)}</span><b>${esc(m.nom)}</b>${m.aussi?`<i>${esc(m.aussi)}</i>`:''}<small>${m.z} · N${m.n}${m.m!=='pdc'?' · '+MATERIEL[m.m].court:''}</small></button>${boutonVideo(m.id,'sur-img')}</div>`).join('')}</div>
+    <div class="mvs">${L.map(m=>`<div class="mvc"><button type="button" class="mvb${pris.has(m.id)?' pris':''}" data-act="eadd" data-v="${m.id}" ${plein||pris.has(m.id)?'disabled':''} aria-disabled="${plein||pris.has(m.id)}">${pris.has(m.id)?'<span class="mv-pris">✓ choisi</span>':''}<span class="mv-v">${mvVisuel(m)}</span><b>${esc(m.nom)}</b>${m.aussi?`<i>${esc(m.aussi)}</i>`:''}<small>${m.z} · N${m.n}${m.m!=='pdc'?' · '+MATERIEL[m.m].court:''}</small></button>${boutonVideo(m.id,'sur-img')}</div>`).join('')}</div>
     <div class="rangee" style="margin-top:12px;justify-content:space-between"><button class="bt" type="button" data-act="fermer">Annuler</button><button class="bt orange" type="button" data-act="esave">Enregistrer le WOD</button></div>`,'large');
 }
 
@@ -463,10 +464,12 @@ document.addEventListener('click',async ev=>{
     case 'edep':ED.W.p.dep=CTL.NIV_REPS[+v];peindreEditeur();return;
     case 'epal':{const n=+v;ED.W.p.pal=Array.from({length:n},(_,i)=>n-i);ED.W.preset={6:'fp1',8:'fp2',10:'fp3'}[n];peindreEditeur();return}
     case 'ecap':ED.W.p.cap=+v;peindreEditeur();return;
-    case 'eadd':{const lib=ED.W.f==='tabata'||(ED.W.f==='fortime'&&ED.W.p.pal);ED.W.ex.push({m:v,v:0,reps:lib?0:ED.W.niv!=null?CTL.NIV_REPS[ED.W.niv]:ED.W.f==='emom1'?(ED.W.p.dep||6):ED.W.f==='emom'?7:10});chargeParDefaut(ED.W.ex[ED.W.ex.length-1],E);peindreEditeur();const l=document.querySelector('.ed-liste');if(l)l.scrollIntoView({block:'nearest'});return}
+    case 'eadd':{if(ED.W.ex.some(e=>e.m===v)){toast('Exercice déjà dans le WOD.');return}
+      const mx=CTL.maxExercices(ED.W);if(ED.W.ex.length>=mx){toast('Maximum '+mx+' exercice'+(mx>1?'s':'')+' pour ce format.');return}const lib=ED.W.f==='tabata'||(ED.W.f==='fortime'&&ED.W.p.pal);ED.W.ex.push({m:v,v:0,reps:lib?0:ED.W.niv!=null?CTL.NIV_REPS[ED.W.niv]:ED.W.f==='emom1'?(ED.W.p.dep||6):ED.W.f==='emom'?7:10});chargeParDefaut(ED.W.ex[ED.W.ex.length-1],E);peindreEditeur();const l=document.querySelector('.ed-liste');if(l)l.scrollIntoView({block:'nearest'});return}
     case 'edel':ED.W.ex.splice(+b.dataset.k,1);peindreEditeur();return;
     case 'ever':ED.W.ex[+b.dataset.k].v=+v;peindreEditeur();return;
     case 'esave':{if(!ED.W.ex.length){toast('Ajoute au moins un exercice.');return}
+      {const mx=CTL.maxExercices(ED.W);if(ED.W.ex.length>mx){toast('Trop d’exercices : '+mx+' au maximum pour ce format.');return}}
       const r=rec(E.id,n);if(ED.i>=0){const old=r.wods[ED.i];if(old.fait&&JSON.stringify(old.ex.map(e=>e.m))!==JSON.stringify(ED.W.ex.map(e=>e.m)))ED.W.fait=false;r.wods[ED.i]=ED.W}else r.wods.push(ED.W);
       touche(r);fermer();toast('WOD enregistré.');break}
     case 'rep':jj(E.id).rep=v;modif(9);modif(8);break;
