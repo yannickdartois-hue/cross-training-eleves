@@ -31,6 +31,9 @@ const serveur=(dir,port)=>spawn('python3',['-m','http.server',String(port)],{cwd
    await p.click(`[data-ch=rpe][data-v="${rpe}"]`);await p.click(`[data-ch=regle][data-v=${regle}]`);await p.click('[data-ch=enreg]');await p.waitForTimeout(150);
    if(await p.$('[data-act=tour]'))await p.click('[data-act=tour] >> nth=-1')};
  await lancer(9,'baisse',false);await lancer(6,'garde',true);
+ await p.click('[data-act=go] >> nth=0');await p.click('[data-ch2=go]');await p.clock.runFor(5000);await p.click('[data-ch=stop]');await p.click('[data-ch=stop]');
+ await p.fill('#ch-fc','400');await p.dispatchEvent('#ch-fc','input');verif(/FC possible/.test(await p.textContent('.ch-indic')),'FC impossible (400) refusée');
+ await p.click('[data-ch=annuler]');await p.click('[data-ch=annuler]');
  const cartes=await p.$$eval('.wod',x=>x.map(e=>e.innerText));
  verif(/Décision d’avant .*baisser.*✓ appliquée/s.test(cartes[cartes.length-1]),'« je baisse » puis version − : appliquée');
  const ex=await p.evaluate(()=>exportEleve(elv(),S.seance).wods.pop().suiviDecision);verif(ex&&ex.resultat==='oui','suiviDecision exporté');
@@ -42,7 +45,7 @@ const serveur=(dir,port)=>spawn('python3',['-m','http.server',String(port)],{cwd
  await p.click('[data-act=tab][data-v=envoi]');await p.click('[data-act=qr]');await p.waitForTimeout(800);
  const Q=await p.evaluate(()=>QRS.map(x=>({t:x.titre,n:x.txt.length,txt:x.txt})));
  verif(Q.some(q=>/partie 1\/\d/.test(q.t)),'séance chargée découpée en parties ('+Q.map(q=>q.n).join(', ')+' car.)');
- verif(Q.every(q=>q.n<=620),'chaque QR reste sous le seuil');
+ verif(Q.every(q=>q.n<=760),'chaque QR reste sous le seuil');
  console.log('Sauvegarde chiffrée automatique');
  const dl=p.waitForEvent('download');for(let k=0;k<Q.length-1;k++)await p.click('[data-act=qrnav] >> nth=-1');await p.click('[data-act=qrfin]');
  const d=await dl;const f=path.join(__dirname,'sauvegarde-test.json');await d.saveAs(f);const txt=fs.readFileSync(f,'utf8');
@@ -50,8 +53,7 @@ const serveur=(dir,port)=>spawn('python3',['-m','http.server',String(port)],{cwd
  verif(!/DÉMO|Alice|Bruno/.test(txt.replace(/"noms":\[[^\]]*\]/,'')),'aucun nom en clair hors prénoms de l’accueil');
  const nbWod=await p.evaluate(()=>rec(elv().id,S.seance).wods.length);
  await p.evaluate(()=>{const id=ACTIF;S=null;ACTIF=null;CLEF=null;delete ROOT.groupes[id];ecrireRoot();rendre()});
- await p.setInputFiles('#reprise',f).catch(async()=>{await p.click('[data-act=demo]').catch(()=>{})});
- if(!await p.$('#reprise')){await p.evaluate(()=>{const i=document.createElement('input');i.type='file';i.id='reprise';document.body.appendChild(i)});await p.setInputFiles('#reprise',f)}
+ verif(!!await p.$('#reprise'),'« Reprendre un carnet » sur l’accueil (tablette vidée)');await p.setInputFiles('#reprise',f);
  await p.waitForTimeout(400);const id=JSON.parse(txt).id;
  verif(await p.evaluate(id=>!!ROOT.groupes[id],id),'carnet repris depuis le fichier');
  await p.evaluate(async id=>{await ouvrir(id,'0000');rendre()},id);verif(await p.evaluate(()=>rec(elv().id,S.seance).wods.length)===nbWod,'contenu intact après reprise (code 0000)');

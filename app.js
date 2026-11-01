@@ -128,6 +128,7 @@ function vChoix(){
   <section class="carte"><h3>Nouveau binôme</h3>
     ${C.length?`<p class="small muted">Classes déjà enregistrées sur la tablette :</p><div class="rangee">${C.map(c=>`<button type="button" class="bt" data-act="nouveau" data-v="${esc(c)}">${esc(c)}</button>`).join('')}</div><p class="small muted" style="margin-top:10px">Autre classe :</p>`:''}
     <button type="button" class="bt orange" data-act="nouveauqr">Scanner le QR de la classe</button></section>
+  <section class="carte"><h3>Reprendre un carnet</h3><p class="small muted">Tablette changée ou vidée : choisis le fichier de sauvegarde du carnet (dans Téléchargements), puis tape votre code secret.</p><label class="bt mini" for="reprise">Reprendre un carnet</label><input id="reprise" type="file" accept=".json,application/json" hidden></section>
   <section class="carte"><h3>Démonstration</h3><p class="small muted">Pour essayer l’appli sans classe (professeur) : un binôme fictif « Alice · Bruno », code 0000.</p><button type="button" class="bt mini" data-act="demo">Ouvrir la démo</button></section>`;
 }
 function rendre(){
@@ -338,7 +339,7 @@ function graphesProgres(E){
 function exportEleve(E,n){
   const r0=(S.d[E.id]||{})[n],pr=preuvesRoles(E,n);if((!r0||(!r0.date&&!r0.wods.length))&&!pr)return null;const r=r0||{date:null,mobile:'',wods:[],etoile:null,axe:'',bilan:'',suite:'',etire:false,roles:{},disp:false};
   const T=tab(E.id),J=jj(E.id);
-  return {app:'cross-training-eleves',version:VERSION,activite:'Cross training',classe:S.classe,eleve:E.nom,seance:n,date:r.date||today(),exportedAt:new Date().toISOString(),
+  return {app:'cross-training-eleves',version:VERSION,activite:'Cross training',classe:S.classe,eleve:E.nom,seance:n,date:r.date||(S.eleves.map(A=>(S.d[A.id]||{})[n]).find(x=>x&&x.date)||{}).date||today(),exportedAt:new Date().toISOString(),
     parcours:pk(),mobile:r.mobile||T.mobile||'',dispense:!!r.disp,
     wods:r.wods.map(W=>({format:W.f,p:W.p,ordre:W.ordre||'v',special:!!W.special,preset:W.preset||'',titre:CTL.titreWod(W),
       exercices:(W.ex||[]).map(e=>{const m=mvById(e.m)||{};return {id:e.m,nom:m.nom||e.m,zone:m.z||'',niveau:m.n||null,version:e.v||0,reps:e.reps||0,charge:e.kg||null,noteExecution:e.note||null,criteres:e.crit?{placement:e.crit[0],respiration:e.crit[1],amplitude:e.crit[2]}:null}}),
@@ -446,7 +447,9 @@ function lancerWod(i,reprise){
     onAnnule(){rendre()}});
 }
 // Décision de régulation prise au dernier WOD fait (rappelée au départ du suivant)
-function wodDecisionAvant(id,n,i){for(let k=n;k>=1;k--){const r=rec(id,k,false);if(!r)continue;const L=r.wods.filter((w,j)=>w.fait&&w.regle&&(k<n||j<i));if(L.length)return L[L.length-1]}return null}
+// Dernier WOD fait du même format, avant le WOD i de la séance n, s'il porte une décision
+function wodDecisionAvant(id,n,i){const f=(rec(id,n,false)||{wods:[]}).wods[i];if(!f)return null;
+  for(let k=n;k>=1;k--){const r=rec(id,k,false);if(!r)continue;const L=r.wods.filter((w,j)=>w.fait&&w.f===f.f&&(k<n||j<i));if(L.length){const w=L[L.length-1];return w.regle?w:null}}return null}
 function suiviDecision(id,n,i){const r=rec(id,n,false),W=r&&r.wods[i];if(!W||!W.fait)return null;const P=wodDecisionAvant(id,n,i);if(!P)return null;
   const res=CTL.decisionAppliquee(P,W,MOUV);return {decision:P.regle,resultat:res}}
 function derniereDecision(id,n,wid){for(let k=n;k>=1;k--){const r=rec(id,k,false);if(!r)continue;const L=r.wods.filter(w=>w.fait&&w.regle);if(L.length)return CTL.REGLE[L[L.length-1].regle]||''}return ''}

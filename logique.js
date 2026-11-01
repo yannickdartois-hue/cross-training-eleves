@@ -139,7 +139,9 @@ function controleEpreuve(wods,mob,MOUV){
 function controleWod(W,autres,mob,MOUV){
   const mv=id=>MOUV.find(x=>x.id===id)||{},ex=W.ex||[],n=ex.length,L=[],ZN=['INF','SUP','TRONC','CARDIO'];
   if(!mob){L.push([null,'Choisis ton mobile (Mon tableau) pour voir les règles de l’épreuve.']);}
-  const niv=ex.map(e=>mv(e.m).n||0),zs=new Set(ex.map(e=>mv(e.m).z).filter(Boolean));
+  const niv=ex.map(e=>mv(e.m).n||0),zs=new Set(ex.map(e=>mv(e.m).z).filter(Boolean)),ps=PRESETS.find(x=>x.id===W.preset)||{};
+  if(mob&&!ps.ep&&(W.f==='emom'||W.f==='tabata'))L.push([null,'WOD d’entraînement : les règles de l’épreuve ne s’appliquent qu’aux formats de l’épreuve.']);
+  mob=ps.ep?mob:'';
   if(mob&&W.f==='emom'){
     L.push([n>=3&&n<=4,'EMOM : 3 à 4 exercices ('+n+')']);
     const v=mob==='mod'?2:3,bas=niv.filter(x=>x<v).length;L.push([n>0&&bas===0,'EMOM '+(mob==='mod'?'modéré':'élevé')+' : exercices de niveau '+v+(mob==='mod'?' (ou plus)':'')+(bas?' · '+bas+' en dessous':'')]);
@@ -227,7 +229,7 @@ async function chaineQR(q){
 
 // QR trop chargé : découpé en plusieurs QR (« partie 1/2 »…), recollés par l'outil prof.
 // La 1re partie porte toute la séance sauf une partie des WOD ; les suivantes, l'en-tête minimal et les autres WOD.
-const SEUIL_QR=560;
+const SEUIL_QR=700; // ≈ version 18 du QR (89 modules) : testé lisible dès 320 px de large, flou compris
 async function partiesQR(q){
   const t=await chaineQR(q);if(t.length<=SEUIL_QR||!(q.w&&q.w.length>1))return [t];
   const W=q.w,tete={a:q.a,v:q.v,c:q.c,e:q.e,s:q.s,d:q.d,ts:q.ts},P=[];let i=0;

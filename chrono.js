@@ -177,7 +177,7 @@ function lancer(W,opts){
   }
   const fourch=opts.fourchette||null;
   function regleConseillee(){const f=+fc||0;if(fourch&&f&&f>fourch[1]||rpe>=9)return 'baisse';if(fourch&&f&&f<fourch[0]||rpe&&rpe<=3)return 'monte';return rpe||f?'garde':''}
-  const manque=()=>{const L=[];if(!rpe)L.push('l’effort perçu');if(!regle)L.push('ta décision pour le prochain WOD');if(COMPLET&&com.trim().length<3)L.push('le commentaire');if(COMPLET&&conseil.trim().length<3)L.push('le conseil du coach');return L};
+  const manque=()=>{const L=[];if(String(fc).trim()&&(isNaN(+fc)||+fc<40||+fc>230))L.push('une FC possible (entre 40 et 230)');if(!rpe)L.push('l’effort perçu');if(!regle)L.push('ta décision pour le prochain WOD');if(COMPLET&&com.trim().length<3)L.push('le commentaire');if(COMPLET&&conseil.trim().length<3)L.push('le conseil du coach');return L};
   function peindreFin(){
     const pret=!manque().length,rc=regleConseillee(),coachs=opts.coachs||[];
     v.innerHTML=`<div class="chr fin"><p class="ch-titre">Terminé</p><p class="ch-sous">${esc(opts.athlete||'')} · ${esc(opts.titreWod||'')}</p>
