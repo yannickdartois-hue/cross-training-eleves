@@ -23,8 +23,8 @@
       ${v.f?`<div class="vid-cadre"><video src="${esc(v.f)}" controls autoplay muted playsinline loop></video></div>`:navigator.onLine===false
         ?'<p class="vid-hors">Pas de connexion internet : la vidéo ne peut pas s’ouvrir. Suis l’image et les consignes de la fiche.</p>'
         :`<div class="vid-cadre"><iframe src="${src}" title="${esc(m.nom)}" allow="autoplay; encrypted-media; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`}
-      <p class="vid-src">${esc(v.t)} · chaîne ${esc(v.c)} · ${esc(v.d)}${v.a?'<br><i>Vidéo proche du mouvement : en cas de différence, la fiche de l’appli fait foi.</i>':''}</p>
-      <div class="vid-pied"><a href="${lien}" target="_blank" rel="noopener">${v.f?"Ouvrir la vidéo":v.pt?"Ouvrir sur le tube EPS":"Ouvrir sur YouTube"}</a><button type="button" class="vid-ok" data-vid="x">Fermer</button></div>
+      <p class="vid-src">${[v.t,v.c?'chaîne '+v.c:'',v.d].filter(Boolean).map(esc).join(' · ')}${v.a?'<br><i>Vidéo proche du mouvement : en cas de différence, la fiche de l’appli fait foi.</i>':''}</p>
+      <div class="vid-pied"><a href="${esc(lien)}" target="_blank" rel="noopener">${v.f?"Ouvrir la vidéo":v.pt?"Ouvrir sur le tube EPS":"Ouvrir sur YouTube"}</a><button type="button" class="vid-ok" data-vid="x">Fermer</button></div>
     </div>`;
     d.addEventListener('click',e=>{if(e.target===d||e.target.closest('[data-vid="x"]'))fermer()});
     document.body.appendChild(d);ouvert=d;

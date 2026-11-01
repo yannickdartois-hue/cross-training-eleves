@@ -40,7 +40,7 @@ function scanner(onCode,opts){
   async function tic(){
     if(fini)return;
     if(video.readyState>=2&&video.videoWidth){
-      const w=video.videoWidth,h=video.videoHeight,k=Math.min(1,720/Math.max(w,h));
+      const w=video.videoWidth,h=video.videoHeight,k=Math.min(1,1280/Math.max(w,h)); // 1280 px : un QR dense (séance chargée) reste lisible même petit dans l’image
       cv.width=Math.round(w*k);cv.height=Math.round(h*k);ctx.drawImage(video,0,0,cv.width,cv.height);
       const img=ctx.getImageData(0,0,cv.width,cv.height),r=root.jsQR(img.data,cv.width,cv.height,{inversionAttempts:'dontInvert'});
       if(r&&r.data&&(r.data!==dernier||Date.now()-dernierT>4000)){

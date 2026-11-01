@@ -49,9 +49,12 @@ const RPE10=['','Très très facile','Facile','Modéré','Un peu dur','Dur','Dur
 const REGLE={baisse:'baisser d’une version ou d’un niveau',garde:'garder le même travail',monte:'monter d’une version ou d’un niveau',recup:'allonger la récupération'};
 const CRIT3=['placement','respiration','amplitude'];
 function ressentiTxt(n,ech){if(!n)return '—';return ech===10?'effort '+n+'/10 '+RPE10[n]:ech===5?n+'/5 '+RESS5[n]:n+'/4 (ancienne échelle)'}
-// critères codés en un nombre pour le QR : 8 + placement×4 + respiration×2 + amplitude
-const critCode=c=>c&&c.some(x=>x===0||x===1)?8+(c[0]?4:0)+(c[1]?2:0)+(c[2]?1:0):0;
-const critDecode=n=>n>=8?[n&4?1:0,n&2?1:0,n&1?1:0]:null;
+// critères codés en un nombre pour le QR : 27 + 9×placement + 3×respiration + amplitude, chaque critère valant
+// 1 réussi, 0 raté, 2 non observé (un critère non observé ne doit pas devenir « raté » chez le prof).
+// Ancien codage (8 à 15, sans « non observé ») toujours lu.
+const c3=x=>x===1?1:x===0?0:2;
+const critCode=c=>c&&c.some(x=>x===0||x===1)?27+9*c3(c[0])+3*c3(c[1])+c3(c[2]):0;
+const critDecode=n=>{if(n>=27&&n<54){n-=27;return [Math.floor(n/9),Math.floor(n/3)%3,n%3].map(x=>x===2?null:x)}return n>=8&&n<16?[n&4?1:0,n&2?1:0,n&1?1:0]:null};
 // Nombre maximum d'exercices d'un WOD : format de l'épreuve = ce que fixe le référentiel ; sinon 8
 // (Tabata : pas plus d'exercices que de rounds).
 const MAX_EX=8;
@@ -171,8 +174,8 @@ function decisionAppliquee(prev,cur,MOUV){
   const pr=prev.p||{},cp=cur.p||{};
   if(isNaN(dn))return null;
   switch(prev.regle){
-    case 'baisse':return dn<-0.01||dr<-0.5?'oui':'non';
-    case 'monte':return dn>0.01||dr>0.5?'oui':'non';
+    case 'baisse':return dn<-0.01||dr<-0.5||(meme&&cur.f==='tabata'&&((cp.e||0)<(pr.e||0)||(cp.r||0)>(pr.r||0)))?'oui':'non';
+    case 'monte':return dn>0.01||dr>0.5||(meme&&cur.f==='tabata'&&((cp.e||0)>(pr.e||0)||(cp.r||0)<(pr.r||0)))?'oui':'non';
     case 'garde':return Math.abs(dn)<0.01&&Math.abs(dr)<=1?'oui':'non';
     case 'recup':if(meme&&cur.f==='tabata')return (cp.r||0)>(pr.r||0)||(cp.e||0)<(pr.e||0)?'oui':'non';
       if(meme&&(cur.f==='emom'||cur.f==='emom1'))return dr<-0.5||dn<-0.01?'oui':'non';
@@ -185,7 +188,8 @@ function decisionAppliquee(prev,cur,MOUV){
 function slug(s){return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9]+/g,'').slice(0,24)}
 function nomFichier(classe,eleve,seance){
   const parts=String(eleve||'').trim().split(/\s+/),prenom=parts[0]||'',nom=parts.slice(1).join(' ');
-  const who=slug(nom?nom:prenom)+(nom?slug(prenom).slice(0,1).toUpperCase():'');
+  // nom + prénom complet : « Léa MARTIN » et « Louis MARTIN » ne doivent pas donner le même fichier (dépôt dans le Nuage)
+  const who=slug(nom?nom:prenom)+(nom?'_'+slug(prenom):'');
   return 'CT_'+(slug(classe)||'Classe')+'_'+(who||'Eleve')+'_S'+seance+'.json';
 }
 

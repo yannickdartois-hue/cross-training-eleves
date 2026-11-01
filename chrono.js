@@ -45,6 +45,7 @@ function lancer(W,opts){
     norep:0,regul:0,versions:ex.map(e=>e.v||0),notesLog:[],critLog:[],seq:0,echec:null,minuteFaite:-1};
   if(!R.critLog)R.critLog=[];
   const COMPLET=!!opts.complet; // saisie complète : critères demandés après chaque exercice, ressentis détaillés, commentaire et conseil obligatoires
+  let dernierHtml='';
   let t0=null,pauseA=null,pauseMs=0,fini=false,tick=null,dernierS=-1,phaseVue=snap?snap.phaseVue||'':'',arret=false,dernierEtat=0;
   let file=[]; // exercices dont la note d'exécution est demandée (index)
   const repsE1=(j,i)=>W.f==='emom'?((ex[j]&&ex[j].reps)||7):((ex[j]&&ex[j].reps)||p.dep||6)+i;
@@ -75,7 +76,9 @@ function lancer(W,opts){
   const zone=r=>r>20?'z1':r>10?'z2':'z3'; // couleur de la minute : > 20 s, 10 à 20 s, < 10 s
   // saisie complète seulement : les critères sont demandés au partenaire après chaque exercice validé
   let nepC=[1,1,1];
-  const demanderNotes=L=>{if(!COMPLET)return;L.forEach(j=>{if(ex[j])file.push(j)})};
+  // 2 observations par exercice suffisent (critère retenu s'il est réussi au moins une fois sur deux) :
+  // au-delà, la fenêtre couperait le WOD à chaque exercice (AMRAP, EMOM).
+  const demanderNotes=L=>{if(!COMPLET)return;L.forEach(j=>{if(ex[j]&&!file.includes(j)&&R.critLog.filter(x=>x.j===j).length<2)file.push(j)})};
   function etat(force){if(!opts.onEtat)return;const t=Date.now();if(!force&&t-dernierEtat<1000)return;dernierEtat=t;
     try{opts.onEtat({v:1,R,ecoule:ecoule(),marche:!pauseA,phaseVue,fini,ts:t})}catch(e){}}
 
@@ -92,7 +95,7 @@ function lancer(W,opts){
     const cle=o.k+'';if(cle!==phaseVue){const avant=phaseVue;phaseVue=cle;
       if(typ==='eff'||typ==='min'||typ==='amrap'||typ==='ft'){bipGo();file=[]}
       if(typ==='rep'){son(440,.18,.5);setTimeout(()=>son(440,.18,.5),250);demanderNotes([exoDuRound(i)])}
-      if(typ==='min'&&SEQ){if(i>0&&R.restants[i-1]==null)R.restants[i-1]=0;if(i>0&&!R.minutes[i-1])R.minutes[i-1]={ok:0,stop:Math.min(R.seq,ex.length-1),partiel:0,auto:1};R.seq=0;R.echec=null}
+      if(typ==='min'&&SEQ){if(i>0&&R.restants[i-1]==null)R.restants[i-1]=0;if(i>0&&!R.minutes[i-1])R.minutes[i-1]={ok:0,stop:R.echec?R.echec.j:Math.min(R.seq,ex.length-1),partiel:R.echec?R.echec.n:0,auto:1};R.seq=0;R.echec=null}
       if(avant==='')file=[];
     }
     let couleur='prep',titre='Prêt ?',corps='',grand=mmss(o.reste),sous='';
@@ -132,10 +135,14 @@ function lancer(W,opts){
       <div class="ch-crit">${CRIT.map((c,k)=>`<button type="button" class="${nepC[k]?'ok':'ko'}" data-ch="nepc" data-k="${k}"><b>${nepC[k]?'✓':'✗'} ${c}</b><small>${esc(mc[k]||'')}</small></button>`).join('')}</div>
       <p class="ch-lab">Touche un critère pour le passer en ✗ · note ${noteCrit(nepC)}/4 ${esc(NOTES[noteCrit(nepC)-1][1])}</p>
       <div class="ch-boutons"><button type="button" class="ch-nep-p" data-ch="nepskip">Passer</button><button type="button" class="ch-gros ch-fini" data-ch="nepok">Valider</button></div></div>`:'';
-    v.innerHTML=`<div class="chr ${couleur}${pauseA?' pause':''}"><div class="ch-haut"><span>${esc(opts.athlete||'')}</span><span>${esc(opts.titreWod||'')}</span><span>${sansCap?'':'reste '+mmss(fin)}</span></div>
-      <p class="ch-titre">${titre}</p><p class="ch-temps">${grand}</p><p class="ch-sous">${sous}</p>
+    // L'écran n'est reconstruit que s'il change : sinon les boutons seraient remplacés 5 fois par seconde
+    // (un appui « +1 » pourrait se perdre, la page ne pourrait pas défiler). Les temps sont mis à jour à part.
+    const html=`<div class="chr ${couleur}${pauseA?' pause':''}"><div class="ch-haut"><span>${esc(opts.athlete||'')}</span><span>${esc(opts.titreWod||'')}</span><span class="ch-reste"></span></div>
+      <p class="ch-titre">${titre}</p><p class="ch-temps"></p><p class="ch-sous">${sous}</p>
       <div class="ch-corps">${corps}</div>
       <div class="ch-bas"><button type="button" class="ch-norep" data-ch="norep">No rep <b>${R.norep}</b></button><button type="button" data-ch="pause">${pauseA?'Reprendre':'Pause'}</button><button type="button" data-ch="sonmode">${libMode()}</button><button type="button" data-ch="stop" class="${arret?'confirme':''}">${arret?'Sûr ? Retoucher':'Arrêter'}</button></div>${nep}</div>`;
+    if(html!==dernierHtml){const c=v.querySelector('.chr'),y=c?c.scrollTop:0;v.innerHTML=html;dernierHtml=html;const n=v.querySelector('.chr');if(n&&y)n.scrollTop=y}
+    v.querySelector('.ch-temps').textContent=grand;v.querySelector('.ch-reste').textContent=sansCap?'':'reste '+mmss(fin);
     etat();
   }
   function exoDuRound(i){return root.CTL.exoDuRound(W,i)}
@@ -255,7 +262,7 @@ function lancer(W,opts){
   const iosVeille=!('wakeLock' in navigator);
   v.innerHTML=`<div class="chr prep"><div class="ch-haut"><span>${esc(opts.athlete||'')}</span><span>${esc(opts.titreWod||'')}</span><span>${sansCap?'sans limite':mmss(total-PREP)}</span></div>
     <p class="ch-titre">Prêts ?</p><p class="ch-sous">L’athlète se place. Le partenaire tient la tablette : il valide chaque exercice, compte, note les no rep et l’exécution.</p>
-    ${opts.rappel?`<p class="ch-rappel">🔁 Au dernier WOD, tu as décidé : <b>${esc(opts.rappel)}</b></p>`:''}
+    ${opts.rappel?`<p class="ch-rappel">🔁 Au dernier WOD de ce format, tu as décidé : <b>${esc(opts.rappel)}</b></p>`:''}
     ${iosVeille?'<p class="ch-lab">⚠ Cette tablette peut se mettre en veille : garde l’écran allumé (touche-le de temps en temps). Le WOD reprend s’il se coupe.</p>':''}
     <div class="ch-corps"><div class="ch-liste">${ex.map((e,j)=>exoHTML(j,true,W.f==='tabata'?null:W.f==='emom1'?repsE1(j,0):W.f==='fortime'?repsFT(j):e.reps||null)).join('')}</div></div>
     <div class="ch-bas"><button type="button" data-ch2="annuler">Annuler</button><button type="button" data-ch2="son">${libMode()}</button><button type="button" class="ch-ok" data-ch2="go">Départ (3 s)</button></div></div>`;

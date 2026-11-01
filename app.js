@@ -237,6 +237,9 @@ function peindrePresets(){
     <div class="rangee" style="margin-top:12px"><button class="bt" type="button" data-act="fermer">Annuler</button></div>`,'large');
 }
 function peindreEditeur(){
+  const f0=document.querySelector('#modal .fen'),y0=f0?f0.scrollTop:0;
+  peindreEditeur0();const f1=document.querySelector('#modal .fen');if(f1&&y0)f1.scrollTop=y0}
+function peindreEditeur0(){
   const W=ED.W,ps=CTL.PRESETS.find(p=>p.id===W.preset)||{};
   const L=MVS().filter(m=>!ED.zone||m.z===ED.zone);
   const reps=W.f!=='tabata'&&!(W.f==='fortime'&&W.p.pal);
@@ -376,8 +379,8 @@ function imprimerBilan(){const n=S.seance,L=lignesBilan();let a=$('#print-area')
     <p>Séance : ${r.rs&&r.rs.etoiles?'★'.repeat(r.rs.etoiles)+' '+esc(CTL.ETOILES[r.rs.etoiles]):'—'} · fatigue : ${r.rs&&r.rs.fatigue?esc(CTL.FATIGUE[r.rs.fatigue]):'—'}</p>${r.bilan?`<p>Bilan : ${esc(r.bilan)}</p>`:''}`).join('');
   window.print()}
 function csvSeance(){const n=S.seance,q=v=>{const x=String(v==null?'':v).replace(/"/g,'""');return /[;\n"]/.test(x)?'"'+x+'"':x};
-  const T=[['Classe','Élève','Séance','WOD','Résultat','Exercices','FC','Ressenti','Commentaire','Étoiles séance','Fatigue séance'].join(';')];
-  lignesBilan().forEach(({E,r,W})=>W.forEach(w=>T.push([S.classe,E.nom,n,CTL.titreWod(w),CTL.score(w),w.ex.map(e=>(mvById(e.m)||{nom:e.m}).nom+(e.reps?' x'+e.reps:'')+(e.kg?' '+e.kg+'kg':'')+(e.note?' note '+e.note+'/4':'')).join(' | '),w.fc||'',ressW(w),w.com||'',(r.rs||{}).etoiles||'',(r.rs||{}).fatigue||''].map(q).join(';'))));
+  const T=[['Classe','Élève','Séance','WOD','Résultat','Exercices (critères, note /4)','FC','Effort / ressenti','Décision','Coach','Conseil','Commentaire','Étoiles séance','Fatigue séance'].join(';')];
+  lignesBilan().forEach(({E,r,W})=>W.forEach(w=>T.push([S.classe,E.nom,n,CTL.titreWod(w),CTL.score(w),w.ex.map(e=>(mvById(e.m)||{nom:e.m}).nom+(e.reps?' x'+e.reps:'')+(e.kg?' '+e.kg+'kg':'')+(critTxt(e)?' '+critTxt(e):'')+(e.note?' note '+e.note+'/4':'')).join(' | '),w.fc||'',ressW(w),CTL.REGLE[w.regle]||'',w.coach||'',w.conseil||'',w.com||'',(r.rs||{}).etoiles||'',(r.rs||{}).fatigue||''].map(q).join(';'))));
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+T.join('\n')],{type:'text/csv;charset=utf-8'}));a.download='CT_'+(CTL.slug(S.classe)||'classe')+'_S'+n+'_bilan.csv';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}
 let QRS=null;
 function qrSvg(txt){return TTQR.svgQR(txt)}
@@ -437,7 +440,7 @@ function lancerWod(i,reprise){
   const E=elv(),n=S.seance,r=rec(E.id,n),W=r.wods[i];if(!W.id)W.id=uid();
   const autres=S.eleves.filter(x=>x.id!==E.id).map(x=>x.nom),mob=mobileDe(E.id,n);
   CHRONO.lancer(W,{athlete:E.nom,titreWod:CTL.titreWod(W),mv:mvById,visuel:mvVisuel,reprise:reprise||null,
-    complet:complet(),coachs:autres,coach:W.coach||autres[0]||'',rappel:derniereDecision(E.id,n,W.id),fourchette:CTL.FOURCHETTE[mob]||null,
+    complet:complet(),coachs:autres,coach:W.coach||autres[0]||'',rappel:(w=>w?CTL.REGLE[w.regle]||'':'')(wodDecisionAvant(E.id,n,i)),fourchette:CTL.FOURCHETTE[mob]||null,
     onEtat(e){enCours(e?{g:ACTIF,el:E.id,n,w:W.id,e}:null)},
     onFin(x){W.fait=true;W.res=x.res;W.fc=x.fc;W.rpe=x.rpe;W.dims=x.dims||null;W.com=x.commentaire||'';W.regle=x.regle;W.coach=x.coach;W.conseil=x.conseil;delete W.ress;delete W.ress5;W.regul=x.regulations;W.norep=x.noRep;
       W.ex.forEach((e,k)=>{e.v=x.versions[k];if(x.notes&&x.notes[k])e.note=x.notes[k];else delete e.note;if(x.crit&&x.crit[k]&&x.crit[k].some(c=>c!=null))e.crit=x.crit[k];else delete e.crit});
@@ -446,13 +449,11 @@ function lancerWod(i,reprise){
       if(S.eleves.length>1)aQuiLeTour()},
     onAnnule(){rendre()}});
 }
-// Décision de régulation prise au dernier WOD fait (rappelée au départ du suivant)
 // Dernier WOD fait du même format, avant le WOD i de la séance n, s'il porte une décision
 function wodDecisionAvant(id,n,i){const f=(rec(id,n,false)||{wods:[]}).wods[i];if(!f)return null;
   for(let k=n;k>=1;k--){const r=rec(id,k,false);if(!r)continue;const L=r.wods.filter((w,j)=>w.fait&&w.f===f.f&&(k<n||j<i));if(L.length){const w=L[L.length-1];return w.regle?w:null}}return null}
 function suiviDecision(id,n,i){const r=rec(id,n,false),W=r&&r.wods[i];if(!W||!W.fait)return null;const P=wodDecisionAvant(id,n,i);if(!P)return null;
   const res=CTL.decisionAppliquee(P,W,MOUV);return {decision:P.regle,resultat:res}}
-function derniereDecision(id,n,wid){for(let k=n;k>=1;k--){const r=rec(id,k,false);if(!r)continue;const L=r.wods.filter(w=>w.fait&&w.regle);if(L.length)return CTL.REGLE[L[L.length-1].regle]||''}return ''}
 // Preuves des rôles : WOD des partenaires où cet élève était le coach (il a regardé, compté, conseillé)
 function preuvesRoles(E,n){const L=[],pour=new Set();S.eleves.forEach(A=>{if(A.id===E.id)return;const r=rec(A.id,n,false);if(r)r.wods.forEach(w=>{if(w.fait&&w.coach===E.nom){L.push(w);pour.add(A.nom)}})});
   return L.length?{wods:L.length,conseils:L.filter(w=>w.conseil).map(w=>w.conseil),pour:[...pour]}:null}
@@ -559,11 +560,12 @@ document.addEventListener('change',async ev=>{
       if(!o.carnetCT||!o.v)throw 0;delete o.carnetCT;if(o.cfg)ROOT.classes[o.cfg.classe]=o.cfg;
       await verrouiller();const id=uid();ROOT.groupes[id]={classe:o.classe||'',noms:(o.eleves||[]).map(e=>prenom(e.nom)),clair:o};ecrireRoot();rendre();toast('Carnet repris : choisissez-le et donnez-lui un code.')}
     catch(e){toast('Ce fichier n’est pas un carnet de cross training.')}
+    finally{t.value=''}
     return}
   if(!S||!S.eleves.length)return;
   const E=elv(),n=S.seance;
   if(t.dataset.t){const T=tab(E.id);T[t.dataset.t]=t.value;modif();sauver();if(t.tagName==='SELECT')rendre();return}
-  if(t.dataset.ed&&ED){const val=+t.value||0;if(t.dataset.ed==='reps')ED.W.ex[+t.dataset.k].reps=val;else if(t.dataset.ed==='kg'){const e=ED.W.ex[+t.dataset.k];if(val>0)e.kg=val;else delete e.kg}else if(t.dataset.ed==='min')ED.W.p.min=Math.max(1,val);else if(t.dataset.ed==='dep')ED.W.p.dep=Math.max(1,val);return}
+  if(t.dataset.ed&&ED){const val=+t.value||0;if(t.dataset.ed==='reps')ED.W.ex[+t.dataset.k].reps=val;else if(t.dataset.ed==='kg'){const e=ED.W.ex[+t.dataset.k];if(val>0)e.kg=val;else delete e.kg}else if(t.dataset.ed==='min'){ED.W.p.min=Math.max(1,Math.min(ED.W.f==='amrap'?30:60,val));peindreEditeur()}else if(t.dataset.ed==='dep')ED.W.p.dep=Math.max(1,val);return}
   const c=t.dataset.ch;if(!c)return;
   if(c==='sauvauto'){S.sauvAuto=t.checked;sauver();toast(t.checked?'Sauvegarde automatique activée.':'Sauvegarde automatique désactivée.');return}
   const r=rec(E.id,n);

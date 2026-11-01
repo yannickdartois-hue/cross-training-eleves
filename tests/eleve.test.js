@@ -14,6 +14,11 @@ const serveur=(dir,port)=>spawn('python3',['-m','http.server',String(port)],{cwd
  p.on('pageerror',e=>errs.push(e.message));await p.clock.install();
  await p.goto('http://localhost:8781/index.html');await p.waitForTimeout(300);
  await p.click('[data-act=demo]');await p.waitForTimeout(2500);
+ console.log('Fonctions communes');
+ const u=await p.evaluate(()=>({c:CTL.critDecode(CTL.critCode([0,1,null])),o:CTL.critDecode(13),f:[CTL.nomFichier('1G5','Léa MARTIN',1),CTL.nomFichier('1G5','Louis MARTIN',1)]}));
+ verif(JSON.stringify(u.c)==='[0,1,null]','critère non observé transmis comme « non observé » (pas comme raté)');
+ verif(JSON.stringify(u.o)==='[1,0,1]','ancien codage des critères toujours lu');
+ verif(u.f[0]!==u.f[1],'deux élèves de même nom : fichiers différents ('+u.f.join(', ')+')');
  console.log('Conception vérifiée dans l’éditeur');
  await p.selectOption('#mob','mod');await p.waitForTimeout(100);
  await p.click('[data-act=wadd]');await p.click('[data-act=preset][data-v=em8]');
@@ -37,6 +42,10 @@ const serveur=(dir,port)=>spawn('python3',['-m','http.server',String(port)],{cwd
  const cartes=await p.$$eval('.wod',x=>x.map(e=>e.innerText));
  verif(/Décision d’avant .*baisser.*✓ appliquée/s.test(cartes[cartes.length-1]),'« je baisse » puis version − : appliquée');
  const ex=await p.evaluate(()=>exportEleve(elv(),S.seance).wods.pop().suiviDecision);verif(ex&&ex.resultat==='oui','suiviDecision exporté');
+ console.log('Chrono : écran stable');
+ {const go=await p.$$('[data-act=go]');await go[0].click();await p.click('[data-ch2=go]');await p.clock.runFor(4000);
+  const b1=await p.$('[data-ch=amok],[data-ch=plus],[data-ch=seqok]');await p.clock.runFor(3000);verif(b1&&await b1.evaluate(e=>e.isConnected),'les boutons du chrono ne sont pas redessinés chaque seconde (aucun appui perdu)');
+  await p.click('[data-ch=stop]');await p.click('[data-ch=stop]');await p.click('[data-ch=annuler]');await p.click('[data-ch=annuler]')}
  console.log('Courbes de progrès');
  await p.click('[data-act=tab][data-v=progres]');verif(await p.$$eval('.courbe .cb-p',x=>x.length)>=2,'courbe de FC dessinée');
  verif(!!await p.$('.cb-barres'),'barres du test AMRAP');
