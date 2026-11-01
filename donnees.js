@@ -827,6 +827,13 @@ function mvVisuel(m){
   if(!m) return "";
   if(m.img) return `<img src="img/mv/${m.img}.webp" alt="${escC(m.nom)}" loading="lazy">`;
   if(m.fig) return svgFig(m.fig);
+  /* Pas de photo ni de dessin : vignette de la vidéo YouTube (gardée hors ligne par le service worker) */
+  const vid = typeof VIDEOS !== "undefined" && VIDEOS[m.id];
+  if(vid && vid.y) return `<img src="https://i.ytimg.com/vi/${encodeURIComponent(vid.y)}/mqdefault.jpg" alt="${escC(m.nom)} (image de la vidéo)" class="vignette-yt" data-mv="${escC(m.id)}" loading="lazy" referrerpolicy="no-referrer" onerror="mvVignetteKO(this)">`;
+  return mvSansImage(m);
+}
+function mvVignetteKO(el){ const m = mvById(el.getAttribute("data-mv")); el.outerHTML = mvSansImage(m || {nom:"", z:"", n:""}); }
+function mvSansImage(m){
   return `<svg viewBox="0 0 120 80" class="fig sans" role="img" aria-label="${escC(m.nom)}"><rect x="2" y="2" width="116" height="76" rx="10" fill="#f1f5f9" stroke="#cbd5e1"/><text x="60" y="38" text-anchor="middle" font-size="13" font-weight="700" fill="#5b6470">${escC(m.z)} · N${m.n}</text><text x="60" y="56" text-anchor="middle" font-size="10" fill="#5b6470">image à venir</text></svg>`;
 }
 function mvCarte(m){
@@ -970,7 +977,7 @@ window.FORMATS=FORMATS;
 window.FC=FC;
 window.RESSENTIS=RESSENTIS;
 window.ETIREMENTS=ETIREMENTS;
-window.mvVisuel=mvVisuel;
+window.mvVisuel=mvVisuel;window.mvVignetteKO=mvVignetteKO;
 window.svgEtoile=svgEtoile;
 window.svgFig=svgFig;
 window.schema=schema;
