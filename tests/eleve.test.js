@@ -5,8 +5,11 @@
 const {chromium}=require('playwright');const {spawn}=require('child_process');const path=require('path');const fs=require('fs');
 const RACINE=path.resolve(__dirname,'..'),PROF=path.resolve(RACINE,'../cross-training-prof');
 let ok=0,ko=0;
-/* Les formats hors séance du jour sont repliés sous « Autres formats » : on déplie avant de choisir */
-const choisir=async(p,id)=>{await p.evaluate(()=>document.querySelectorAll('details.autres-formats').forEach(d=>d.open=true));await p.click(`[data-act=preset][data-v=${id}] >> visible=true`)};const verif=(c,t)=>{if(c){ok++;console.log('  ✓ '+t)}else{ko++;console.log('  ✗ '+t)}};
+/* Un bouton par format (replié sous « Autres formats » s'il n'est pas prévu ce jour), puis la version dans l'éditeur */
+const choisir=async(p,id)=>{const fm=await p.evaluate(id=>{document.querySelectorAll('details.autres-formats').forEach(d=>d.open=true);return CTL.PRESETS.find(x=>x.id===id).f},id);
+  await p.click(`[data-act=fmt][data-v=${fm}] >> visible=true`);
+  if(await p.evaluate(id=>ED.W.preset!==id,id))await p.click(`[data-act=evar][data-v=${id}]`)};
+const verif=(c,t)=>{if(c){ok++;console.log('  ✓ '+t)}else{ko++;console.log('  ✗ '+t)}};
 const serveur=(dir,port)=>spawn('python3',['-m','http.server',String(port)],{cwd:dir,stdio:'ignore'});
 (async()=>{
  const S=[serveur(RACINE,8781)];if(fs.existsSync(PROF))S.push(serveur(PROF,8782));await new Promise(r=>setTimeout(r,800));

@@ -230,16 +230,15 @@ function ouvrirEditeur(i){
   if(ED.W)peindreEditeur();else peindrePresets();
 }
 function peindrePresets(){
-  const E=elv(),mob=mobileDe(E.id,S.seance);
-  const grp=[['Format de l’épreuve · '+(mob?MOBILES[mob].nom:'choisis ton mobile'),CTL.PRESETS.filter(p=>p.ep&&(!mob||p.mob===mob))],['Découvrir et se tester',CTL.PRESETS.filter(p=>!p.ep)]];
-  if(!mob)grp[0][1]=CTL.PRESETS.filter(p=>p.ep);
-  const bouton=p=>`<button type="button" class="preset" data-act="preset" data-v="${p.id}"><b>${esc(p.nom)}</b><small>${esc(p.aide)}</small></button>`;
-  const tous=grp.map(([t,L])=>`<p class="ch">${esc(t)}</p><div class="presets">${L.map(bouton).join('')}</div>`).join('');
-  /* Seulement les formats de la séance du jour ; les autres sont repliés */
-  const jour=CTL.presetsDuJour(pk(),S.seance,mob),sc=seanceCycle(S.seance);
-  const corps=jour?`<p class="ch">Aujourd’hui${sc?' · '+esc(sc.titre):''}</p><div class="presets">${jour.map(bouton).join('')}</div>
-    <details class="fiche autres-formats"><summary>Autres formats</summary>${tous}</details>`:tous;
-  fen(`<h3>Nouveau WOD · séance ${S.seance}</h3>${corps}
+  const E=elv(),mob=mobileDe(E.id,S.seance),k=pk(),n=S.seance;
+  const jour=CTL.presetsDuJour(k,n,mob),sc=seanceCycle(n);
+  const fJour=jour?[...new Set(jour.map(p=>p.f))]:CTL.FORMATS_UI.map(x=>x[0]);
+  const sous=p=>p.ep?(mob?'Épreuve · '+p.nom.replace(/^(TABATA|EMOM)\s*/,''):'Format de l’épreuve · choisis ta version'):CTL.titreWod({f:p.f,p:p.p}).replace(/^(TABATA|EMOM\+1|EMOM|AMRAP|FOR TIME)\s*/,'');
+  const bouton=([f,nom])=>{const p=CTL.presetDefaut(f,k,n,mob);return `<button type="button" class="preset" data-act="fmt" data-v="${f}"><b>${esc(nom)}</b><small>${esc(sous(p))}</small></button>`};
+  const du=CTL.FORMATS_UI.filter(x=>fJour.includes(x[0])),autres=CTL.FORMATS_UI.filter(x=>!fJour.includes(x[0]));
+  fen(`<h3>Nouveau WOD · séance ${n}</h3>${jour?`<p class="ch">Aujourd’hui${sc?' · '+esc(sc.titre):''}</p>`:''}<div class="presets">${du.map(bouton).join('')}</div>
+    ${autres.length?`<details class="fiche autres-formats"><summary>Autres formats</summary><div class="presets">${autres.map(bouton).join('')}</div></details>`:''}
+    <p class="small muted">Tu pourras changer la version et les réglages à l’écran suivant.</p>
     <div class="rangee" style="margin-top:12px"><button class="bt" type="button" data-act="fermer">Annuler</button></div>`,'large');
 }
 function peindreEditeur(){
@@ -253,8 +252,10 @@ function peindreEditeur0(){
   const nivActif=W.ex.length&&W.ex.every(e=>e.reps===W.ex[0].reps)?CTL.NIV_REPS.indexOf(W.ex[0].reps):-1;
   const boutonsNiv=(act,actif)=>`<span class="niv5">${CTL.NIV_REPS.map((r,n)=>`<button type="button" class="${actif===n?'on':''}" data-act="${act}" data-v="${n}">N${n}<small>${r} rép.</small></button>`).join('')}</span>`;
   const dur=CTL.dureeS(W),mx=CTL.maxExercices(W),plein=W.ex.length>=mx,trop=W.ex.length>mx,pris=new Set(W.ex.map(e=>e.m));
-  fen(`<h3>${esc(CTL.titreWod(W))}${W.special?' · spécial':''}</h3><p class="small muted">${esc(ps.aide||'')}${dur&&/min/.test(ps.aide||'')&&!ps.libre?'':' · '+(dur?esc(CTL.mmss(dur)):'sans limite de temps')}</p>
-    <p class="nbex${trop?' avert':''}"><b>${W.ex.length} / ${mx} exercice${mx>1?'s':''}</b>${ps.nb&&ps.nb<mx?' · '+ps.nb+' conseillé'+(ps.nb>1?'s':''):''}${trop?' · trop d’exercices : retire-en '+(W.ex.length-mx)+' pour enregistrer':plein?' · maximum atteint':''}</p>
+  const VAR=CTL.variantes(W,mobileDe(elv().id,S.seance)),vnom=p=>p.ep?p.nom.replace(/^(TABATA|EMOM)\s*/,'Épreuve '):p.f==='fortime'?(p.p.pal?'Paliers':'3 tours'):'Entraînement (réglable)';
+  const ligneVar=VAR.length?`<div class="rangee"><span class="small">Version</span>${VAR.map(p=>`<button type="button" class="bt mini ${p.id===W.preset?'noir':''}" data-act="evar" data-v="${p.id}" title="${esc(p.aide)}">${esc(vnom(p))}</button>`).join('')}</div>`:'';
+  fen(`<h3>${esc(CTL.titreWod(W))}${W.special?' · spécial':''}</h3><p class="small muted">${esc(ps.aide||'')}${dur&&/min/.test(ps.aide||'')&&(!ps.libre||(ps.aide||'').includes(CTL.mmss(dur)))?'':' · '+(dur?esc(CTL.mmss(dur)):'sans limite de temps')}</p>
+    ${ligneVar}<p class="nbex${trop?' avert':''}"><b>${W.ex.length} / ${mx} exercice${mx>1?'s':''}</b>${ps.nb&&ps.nb<mx?' · '+ps.nb+' conseillé'+(ps.nb>1?'s':''):''}${trop?' · trop d’exercices : retire-en '+(W.ex.length-mx)+' pour enregistrer':plein?' · maximum atteint':''}</p>
     ${(()=>{const E=elv(),r=rec(E.id,S.seance,false),aut=r?r.wods.filter((w,k)=>k!==ED.i):[],C=CTL.controleWod(W,aut,mobileDe(E.id,S.seance),MOUV);
       return C.length?`<ul class="ctrl live">${C.map(c=>`<li class="${c[0]===true?'ok':c[0]===false?'ko':'info'}">${c[0]===true?'✓':c[0]===false?'⚠':'•'} ${esc(c[1])}</li>`).join('')}</ul>`:''})()}
     ${W.f==='tabata'?`<div class="rangee"><span class="small">Ordre</span><button type="button" class="bt mini ${W.ordre!=='h'?'noir':''}" data-act="ordre" data-v="v">Vertical 1-2-3-4-1…</button><button type="button" class="bt mini ${W.ordre==='h'?'noir':''}" data-act="ordre" data-v="h">Horizontal 1-1-2-2…</button></div>`:''}
@@ -518,6 +519,8 @@ document.addEventListener('click',async ev=>{
     case 'go':lancerWod(+b.dataset.i);return;
     case 'wsuiv':S.seance=n+1;toast('Séance '+(n+1)+' : ajoute les WOD que tu prévois.');break;
     case 'versj':S.seance=9;S.tab='seance';break;
+    case 'fmt':{const p=CTL.presetDefaut(v,pk(),S.seance,mobileDe(elv().id,S.seance));ED.W={id:uid(),preset:p.id,f:p.f,p:JSON.parse(JSON.stringify(p.p)),ordre:p.ordre||'v',special:!!p.special,ex:[],fait:false};peindreEditeur();return}
+    case 'evar':{const p=CTL.PRESETS.find(x=>x.id===v);if(!p||!ED||!ED.W)return;ED.W.preset=p.id;ED.W.p=JSON.parse(JSON.stringify(p.p));ED.W.ordre=p.ordre||'v';ED.W.special=!!p.special;peindreEditeur();return}
     case 'preset':{const p=CTL.PRESETS.find(x=>x.id===v);ED.W={id:uid(),preset:p.id,f:p.f,p:JSON.parse(JSON.stringify(p.p)),ordre:p.ordre||'v',special:!!p.special,ex:[],fait:false};peindreEditeur();return}
     case 'ordre':ED.W.ordre=v;peindreEditeur();return;
     case 'ezone':ED.zone=v;peindreEditeur();return;

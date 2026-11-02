@@ -35,4 +35,4 @@ Scripts dans `tests/` (Node + Playwright), à relancer avant chaque mise en lign
 
 ## Formats proposés à chaque séance
 
-À l’ouverture de « Nouveau WOD », l’élève ne voit que les formats de la séance du jour (tableau `DU_JOUR` dans `logique.js`, une liste par parcours et par séance). Les autres formats restent accessibles sous « Autres formats ». Pour changer les formats d’une séance, il suffit de modifier sa liste.
+« Nouveau WOD » affiche un seul bouton par format (TABATA, EMOM, AMRAP, FOR TIME, EMOM+1) : ceux prévus pour la séance du jour, les autres repliés sous « Autres formats ». Chaque bouton s’ouvre sur la version prévue par la séance (tableau `DU_JOUR` dans `logique.js`, une liste par parcours et par séance). Dans l’éditeur, la ligne « Version » permet de passer à une version d’épreuve (N1, N2, N3 du mobile) ou à une version d’entraînement réglable ; la durée, l’effort, le repos et les cycles se règlent comme avant. Le WOD garde l’identifiant de sa version : l’outil prof le lit sans changement.

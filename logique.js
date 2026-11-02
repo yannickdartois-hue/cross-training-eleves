@@ -14,13 +14,13 @@ const NOM_NIV={p:'Première',t:'Terminale'},NOM_DEM={p:'progressive',g:'GAREEPS'
 /* ---------- Formats et réglages tout prêts (référentiel du lycée) ---------- */
 // f : tabata | emom | amrap | fortime | emom1 ; p : paramètres ; nb : nombre d'exercices conseillé ; mob : mobile ; ep : format de l'épreuve
 const PRESETS=[
- {id:'tm1',nom:'TABATA modéré N1',f:'tabata',p:{e:30,r:30,n:8},nb:4,ordre:'v',mob:'mod',ep:1,aide:'2 × 4 exercices, 3 N2 + 1 N1 · 8 min'},
- {id:'tm2',nom:'TABATA modéré N2',f:'tabata',p:{e:30,r:20,n:10},nb:5,ordre:'v',mob:'mod',ep:1,aide:'2 × 5 exercices, 3 N2 + 2 N1 · 8 min 20'},
- {id:'tm3',nom:'TABATA modéré N3',f:'tabata',p:{e:25,r:15,n:12},nb:4,ordre:'v',mob:'mod',ep:1,aide:'3 × 4 exercices, 3 N2 + 1 N1 · 8 min'},
+ {id:'tm1',nom:'TABATA modéré N1',f:'tabata',p:{e:30,r:30,n:8},nb:4,ordre:'v',mob:'mod',ep:1,aide:'4 exercices, 2 tours (3 N2 + 1 N1) · 8 min'},
+ {id:'tm2',nom:'TABATA modéré N2',f:'tabata',p:{e:30,r:20,n:10},nb:5,ordre:'v',mob:'mod',ep:1,aide:'5 exercices, 2 tours (3 N2 + 2 N1) · 8 min 20'},
+ {id:'tm3',nom:'TABATA modéré N3',f:'tabata',p:{e:25,r:15,n:12},nb:4,ordre:'v',mob:'mod',ep:1,aide:'4 exercices, 3 tours (3 N2 + 1 N1) · 8 min'},
  {id:'em8',nom:'EMOM modéré 8 min',f:'emom',p:{min:8},nb:3,max:4,mob:'mod',ep:1,aide:'3 à 4 exercices enchaînés, 7 répétitions minimum'},
- {id:'te1',nom:'TABATA élevé N1',f:'tabata',p:{e:20,r:20,n:8},nb:4,ordre:'v',mob:'elev',ep:1,aide:'2 × 4 exercices · 5 min 20'},
- {id:'te2',nom:'TABATA élevé N2',f:'tabata',p:{e:25,r:15,n:8},nb:2,ordre:'v',mob:'elev',ep:1,aide:'4 × 2 exercices · 5 min 20'},
- {id:'te3',nom:'TABATA élevé N3',f:'tabata',p:{e:20,r:10,n:10},nb:5,ordre:'v',mob:'elev',ep:1,aide:'2 × 5 exercices · 5 min'},
+ {id:'te1',nom:'TABATA élevé N1',f:'tabata',p:{e:20,r:20,n:8},nb:4,ordre:'v',mob:'elev',ep:1,aide:'4 exercices, 2 tours · 5 min 20'},
+ {id:'te2',nom:'TABATA élevé N2',f:'tabata',p:{e:25,r:15,n:8},nb:2,ordre:'v',mob:'elev',ep:1,aide:'2 exercices, 4 tours · 5 min 20'},
+ {id:'te3',nom:'TABATA élevé N3',f:'tabata',p:{e:20,r:10,n:10},nb:5,ordre:'v',mob:'elev',ep:1,aide:'5 exercices, 2 tours · 5 min'},
  {id:'ts',nom:'TABATA spécial (une zone)',f:'tabata',p:{e:20,r:10,n:10},nb:5,ordre:'v',mob:'elev',ep:1,special:1,aide:'une seule zone : INF, SUP, TRONC ou CARDIO'},
  {id:'em5',nom:'EMOM élevé 5 min',f:'emom',p:{min:5},nb:3,max:4,mob:'elev',ep:1,aide:'3 à 4 exercices de niveau 3'},
  {id:'t0',nom:'TABATA découverte 20/10 × 8',f:'tabata',p:{e:20,r:10,n:8},nb:2,ordre:'v',libre:1,aide:'le Tabata d’origine · 4 min'},
@@ -49,6 +49,17 @@ function presetsDuJour(pk,n,mob){
   L.forEach(id=>{const sel=id==='EP'?PRESETS.filter(ep):id==='EP_T'?PRESETS.filter(p=>ep(p)&&p.f==='tabata'):id==='EP_E'?PRESETS.filter(p=>ep(p)&&p.f==='emom'):PRESETS.filter(p=>p.id===id);
     sel.forEach(p=>{if(!out.includes(p))out.push(p)})});
   return out.length?out:null}
+/* Un seul bouton par format : il s'ouvre sur la version prévue par la séance du jour, que l'élève peut changer */
+const FORMATS_UI=[['tabata','TABATA'],['emom','EMOM'],['amrap','AMRAP'],['fortime','FOR TIME'],['emom1','EMOM+1']];
+const DEFAUT_F={tabata:'t0',emom:'em6',amrap:'am6',fortime:'fp1',emom1:'e1'};
+function presetDefaut(f,pk,n,mob){const p=(presetsDuJour(pk,n,mob)||[]).find(x=>x.f===f);return p||PRESETS.find(x=>x.id===DEFAUT_F[f])}
+// Versions proposées dans l'éditeur : formats de l'épreuve (du mobile) + une version d'entraînement réglable
+function variantes(W,mob){const f=W.f,cur=PRESETS.find(p=>p.id===W.preset)||{};
+  const ep=PRESETS.filter(p=>p.f===f&&p.ep&&(!mob||p.mob===mob));
+  const ent=f==='tabata'?[cur.f==='tabata'&&!cur.ep?cur:PRESETS.find(p=>p.id==='t0')]
+    :f==='emom'?[PRESETS.find(p=>p.id==='em6')]
+    :f==='fortime'?[cur.f==='fortime'&&cur.p&&cur.p.pal?cur:PRESETS.find(p=>p.id==='fp1'),PRESETS.find(p=>p.id==='ft')]:[];
+  const L=ep.concat(ent.filter(Boolean));return L.length>1?L:[]}
 // Réglages repris de l'appli chrono « cross-training-pompidou »
 const NIV_REPS=[4,6,8,10,12]; // N0 à N4 : répétitions par exercice (AMRAP, EMOM) ou au départ (EMOM+1)
 const TABATA_REGLAGES=[[20,10],[30,10],[20,20],[40,20],[10,20],[30,30],[45,15]];
@@ -266,5 +277,5 @@ function decrireWod(w,MOUV){
   const ex=(w.exercices||[]).map(e=>{const m=MOUV.find(x=>x.id===e.id)||{};return {nom:e.nom||m.nom||e.id,zone:e.zone||m.z||'',niveau:e.niveau||m.n||null,version:e.version||0,reps:e.reps||0,note:e.noteExecution||null,charge:e.charge||null}});
   return {titre:titreWod(W),format:ps?ps.nom:'',duree:dureeS(W),ex};
 }
-root.CTL={presetsDuJour,DU_JOUR,repsFaites,tonnage,valeurAmrap,decisionAppliquee,controleWod,SEUIL_QR,partiesQR,recollerQR,RPE10,REGLE,CRIT3,critCode,critDecode,maxExercices,NOTE4,RESS5,ETOILES,FATIGUE,ressentiTxt,NIV_REPS,TABATA_REGLAGES,somme,decrireWod,VERSION_DONNEES,parcours,NOM_NIV,NOM_DEM,PRESETS,NOM_F,dureeS,mmss,titreWod,exoDuRound,FOURCHETTE,fcDans,niveauEmom,regularite,score,controleEpreuve,slug,nomFichier,versQR,depuisQR,chaineQR};
+root.CTL={presetsDuJour,DU_JOUR,FORMATS_UI,presetDefaut,variantes,repsFaites,tonnage,valeurAmrap,decisionAppliquee,controleWod,SEUIL_QR,partiesQR,recollerQR,RPE10,REGLE,CRIT3,critCode,critDecode,maxExercices,NOTE4,RESS5,ETOILES,FATIGUE,ressentiTxt,NIV_REPS,TABATA_REGLAGES,somme,decrireWod,VERSION_DONNEES,parcours,NOM_NIV,NOM_DEM,PRESETS,NOM_F,dureeS,mmss,titreWod,exoDuRound,FOURCHETTE,fcDans,niveauEmom,regularite,score,controleEpreuve,slug,nomFichier,versQR,depuisQR,chaineQR};
 })(typeof window!=='undefined'?window:globalThis);
