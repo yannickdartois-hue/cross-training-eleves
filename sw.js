@@ -1,6 +1,6 @@
 /* Hors ligne : l'appli est gardée sur la tablette après la 1re ouverture.
    Après une modification, augmenter VERSION. */
-const VERSION='cross-training-eleves-v18';
+const VERSION='cross-training-eleves-v19';
 // Toutes les applis partagent le même stockage (même adresse github.io) : on n'efface QUE les anciennes versions de CETTE appli.
 const MES_CACHES=/^cross\-training\-eleves\-v\d+$/;
 // Wi-Fi faible au gymnase : si le réseau ne répond pas en 3 s, on ouvre la copie gardée sur l'appareil.
