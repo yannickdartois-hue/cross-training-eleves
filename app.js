@@ -233,7 +233,13 @@ function peindrePresets(){
   const E=elv(),mob=mobileDe(E.id,S.seance);
   const grp=[['Format de l’épreuve · '+(mob?MOBILES[mob].nom:'choisis ton mobile'),CTL.PRESETS.filter(p=>p.ep&&(!mob||p.mob===mob))],['Découvrir et se tester',CTL.PRESETS.filter(p=>!p.ep)]];
   if(!mob)grp[0][1]=CTL.PRESETS.filter(p=>p.ep);
-  fen(`<h3>Nouveau WOD · séance ${S.seance}</h3>${grp.map(([t,L])=>`<p class="ch">${esc(t)}</p><div class="presets">${L.map(p=>`<button type="button" class="preset" data-act="preset" data-v="${p.id}"><b>${esc(p.nom)}</b><small>${esc(p.aide)}</small></button>`).join('')}</div>`).join('')}
+  const bouton=p=>`<button type="button" class="preset" data-act="preset" data-v="${p.id}"><b>${esc(p.nom)}</b><small>${esc(p.aide)}</small></button>`;
+  const tous=grp.map(([t,L])=>`<p class="ch">${esc(t)}</p><div class="presets">${L.map(bouton).join('')}</div>`).join('');
+  /* Seulement les formats de la séance du jour ; les autres sont repliés */
+  const jour=CTL.presetsDuJour(pk(),S.seance,mob),sc=seanceCycle(S.seance);
+  const corps=jour?`<p class="ch">Aujourd’hui${sc?' · '+esc(sc.titre):''}</p><div class="presets">${jour.map(bouton).join('')}</div>
+    <details class="fiche autres-formats"><summary>Autres formats</summary>${tous}</details>`:tous;
+  fen(`<h3>Nouveau WOD · séance ${S.seance}</h3>${corps}
     <div class="rangee" style="margin-top:12px"><button class="bt" type="button" data-act="fermer">Annuler</button></div>`,'large');
 }
 function peindreEditeur(){

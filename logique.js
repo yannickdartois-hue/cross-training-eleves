@@ -35,6 +35,20 @@ const PRESETS=[
  {id:'ft',nom:'FOR TIME 3 tours',f:'fortime',p:{tours:3,cap:6},nb:3,aide:'le plus vite possible, 6 min maximum'},
  {id:'e1',nom:'EMOM+1',f:'emom1',p:{min:6,dep:6},nb:3,aide:'tous les exercices chaque minute, validés un par un ; une répétition de plus à chaque minute'}
 ];
+/* Formats proposés en premier à chaque séance, d'après les fiches du cycle (parcours p, g, t, h ; séances 1 à 9).
+   EP = formats de l'épreuve du mobile de l'élève · EP_T = son Tabata d'épreuve · EP_E = son EMOM d'épreuve.
+   Les autres formats restent accessibles sous « Autres formats ». Pour changer une séance, modifier sa liste ici. */
+const DU_JOUR={
+ p:[['t0','t20'],['t20','tm1','tm2','tm3'],['em6','em8'],['t0','EP_T'],['EP'],['EP_E'],['EP'],['EP'],['EP']],
+ g:[['t0','t20'],['EP'],['em6','EP'],['t0','EP'],['EP'],['EP'],['EP'],['EP'],['EP']],
+ t:[['am6'],['em6','EP_T'],['e1','fp1','fp2','fp3','ft'],['t0','EP_T'],['EP'],['EP_E'],['EP','am6'],['EP'],['EP']],
+ h:[['am6'],['EP'],['em6','EP'],['t0','EP'],['EP'],['EP'],['EP','am6'],['EP'],['EP']]};
+function presetsDuJour(pk,n,mob){
+  const L=(DU_JOUR[pk]||[])[n-1];if(!L)return null;
+  const ep=p=>p.ep&&(!mob||p.mob===mob),out=[];
+  L.forEach(id=>{const sel=id==='EP'?PRESETS.filter(ep):id==='EP_T'?PRESETS.filter(p=>ep(p)&&p.f==='tabata'):id==='EP_E'?PRESETS.filter(p=>ep(p)&&p.f==='emom'):PRESETS.filter(p=>p.id===id);
+    sel.forEach(p=>{if(!out.includes(p))out.push(p)})});
+  return out.length?out:null}
 // Réglages repris de l'appli chrono « cross-training-pompidou »
 const NIV_REPS=[4,6,8,10,12]; // N0 à N4 : répétitions par exercice (AMRAP, EMOM) ou au départ (EMOM+1)
 const TABATA_REGLAGES=[[20,10],[30,10],[20,20],[40,20],[10,20],[30,30],[45,15]];
@@ -252,5 +266,5 @@ function decrireWod(w,MOUV){
   const ex=(w.exercices||[]).map(e=>{const m=MOUV.find(x=>x.id===e.id)||{};return {nom:e.nom||m.nom||e.id,zone:e.zone||m.z||'',niveau:e.niveau||m.n||null,version:e.version||0,reps:e.reps||0,note:e.noteExecution||null,charge:e.charge||null}});
   return {titre:titreWod(W),format:ps?ps.nom:'',duree:dureeS(W),ex};
 }
-root.CTL={repsFaites,tonnage,valeurAmrap,decisionAppliquee,controleWod,SEUIL_QR,partiesQR,recollerQR,RPE10,REGLE,CRIT3,critCode,critDecode,maxExercices,NOTE4,RESS5,ETOILES,FATIGUE,ressentiTxt,NIV_REPS,TABATA_REGLAGES,somme,decrireWod,VERSION_DONNEES,parcours,NOM_NIV,NOM_DEM,PRESETS,NOM_F,dureeS,mmss,titreWod,exoDuRound,FOURCHETTE,fcDans,niveauEmom,regularite,score,controleEpreuve,slug,nomFichier,versQR,depuisQR,chaineQR};
+root.CTL={presetsDuJour,DU_JOUR,repsFaites,tonnage,valeurAmrap,decisionAppliquee,controleWod,SEUIL_QR,partiesQR,recollerQR,RPE10,REGLE,CRIT3,critCode,critDecode,maxExercices,NOTE4,RESS5,ETOILES,FATIGUE,ressentiTxt,NIV_REPS,TABATA_REGLAGES,somme,decrireWod,VERSION_DONNEES,parcours,NOM_NIV,NOM_DEM,PRESETS,NOM_F,dureeS,mmss,titreWod,exoDuRound,FOURCHETTE,fcDans,niveauEmom,regularite,score,controleEpreuve,slug,nomFichier,versQR,depuisQR,chaineQR};
 })(typeof window!=='undefined'?window:globalThis);

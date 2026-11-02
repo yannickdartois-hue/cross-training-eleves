@@ -32,3 +32,7 @@ Fichiers : `CT_1G3_MartinL_S4.json`. QR : `CTE1:` + JSON compact compressé (`lo
 ## Tests
 
 Scripts dans `tests/` (Node + Playwright), à relancer avant chaque mise en ligne : voir `tests/README.md`.
+
+## Formats proposés à chaque séance
+
+À l’ouverture de « Nouveau WOD », l’élève ne voit que les formats de la séance du jour (tableau `DU_JOUR` dans `logique.js`, une liste par parcours et par séance). Les autres formats restent accessibles sous « Autres formats ». Pour changer les formats d’une séance, il suffit de modifier sa liste.

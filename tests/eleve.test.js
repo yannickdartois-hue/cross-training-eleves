@@ -4,7 +4,9 @@
    Il faut Node et Playwright (npm i playwright). Les serveurs locaux sont démarrés par le test. */
 const {chromium}=require('playwright');const {spawn}=require('child_process');const path=require('path');const fs=require('fs');
 const RACINE=path.resolve(__dirname,'..'),PROF=path.resolve(RACINE,'../cross-training-prof');
-let ok=0,ko=0;const verif=(c,t)=>{if(c){ok++;console.log('  ✓ '+t)}else{ko++;console.log('  ✗ '+t)}};
+let ok=0,ko=0;
+/* Les formats hors séance du jour sont repliés sous « Autres formats » : on déplie avant de choisir */
+const choisir=async(p,id)=>{await p.evaluate(()=>document.querySelectorAll('details.autres-formats').forEach(d=>d.open=true));await p.click(`[data-act=preset][data-v=${id}] >> visible=true`)};const verif=(c,t)=>{if(c){ok++;console.log('  ✓ '+t)}else{ko++;console.log('  ✗ '+t)}};
 const serveur=(dir,port)=>spawn('python3',['-m','http.server',String(port)],{cwd:dir,stdio:'ignore'});
 (async()=>{
  const S=[serveur(RACINE,8781)];if(fs.existsSync(PROF))S.push(serveur(PROF,8782));await new Promise(r=>setTimeout(r,800));
@@ -21,7 +23,7 @@ const serveur=(dir,port)=>spawn('python3',['-m','http.server',String(port)],{cwd
  verif(u.f[0]!==u.f[1],'deux élèves de même nom : fichiers différents ('+u.f.join(', ')+')');
  console.log('Conception vérifiée dans l’éditeur');
  await p.selectOption('#mob','mod');await p.waitForTimeout(100);
- await p.click('[data-act=wadd]');await p.click('[data-act=preset][data-v=em8]');
+ await p.click('[data-act=wadd]');await choisir(p,'em8');
  await p.click('[data-act=eadd][data-v=chaise]');await p.click('[data-act=eadd][data-v=squat]');
  let L=await p.$$eval('.ctrl.live li',x=>x.map(e=>e.className+' '+e.textContent));
  verif(L.some(t=>/^ko .*3 à 4 exercices/.test(t)),'EMOM à 2 exercices signalé');
@@ -29,7 +31,7 @@ const serveur=(dir,port)=>spawn('python3',['-m','http.server',String(port)],{cwd
  verif(L.some(t=>/il manque/.test(t)),'zones manquantes indiquées');
  await p.click('[data-act=fermer]');
  console.log('Décision appliquée');
- const lancer=async(rpe,regle,ver)=>{await p.click('[data-act=wadd]');await p.click('[data-act=preset][data-v=am6]');await p.click('[data-act=eadd][data-v=squat]');await p.click('[data-act=eadd][data-v=pompe]');
+ const lancer=async(rpe,regle,ver)=>{await p.click('[data-act=wadd]');await choisir(p,'am6');await p.click('[data-act=eadd][data-v=squat]');await p.click('[data-act=eadd][data-v=pompe]');
    if(ver)await p.click('[data-act=ever][data-k="0"][data-v="-1"]');await p.click('[data-act=esave]');
    const go=await p.$$('[data-act=go]');await go[go.length-1].click();await p.click('[data-ch2=go]');await p.clock.runFor(8000);await p.click('[data-ch=amok]');
    await p.click('[data-ch=stop]');await p.click('[data-ch=stop]');await p.fill('#ch-fc','172');await p.dispatchEvent('#ch-fc','input');
