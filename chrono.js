@@ -185,29 +185,66 @@ function lancer(W,opts){
   const fourch=opts.fourchette||null;
   function regleConseillee(){const f=+fc||0;if(fourch&&f&&f>fourch[1]||rpe>=9)return 'baisse';if(fourch&&f&&f<fourch[0]||rpe&&rpe<=3)return 'monte';return rpe||f?'garde':''}
   const manque=()=>{const L=[];if(String(fc).trim()&&(isNaN(+fc)||+fc<40||+fc>230))L.push('une FC possible (entre 40 et 230)');if(!rpe)L.push('l’effort perçu');if(!regle)L.push('ta décision pour le prochain WOD');if(COMPLET&&com.trim().length<3)L.push('le commentaire');if(COMPLET&&conseil.trim().length<3)L.push('le conseil du coach');return L};
+  /* ---------- Prise du pouls assistée : 15 s comptées, battements × 4 ---------- */
+  const PL={etat:'',debut:0,n:''};let poulsT=null;
+  const ICO={baisse:'↓',garde:'=',monte:'↑',recup:'⏱'};
+  const ECG='M0 20H28L33 17L38 20H44L47 25L51 3L55 34L59 20H68Q74 13 80 20H100';
+  const ecgPath=()=>[0,100,200,300].map(x=>`<path d="${ECG}" transform="translate(${x} 0)"/>`).join('');
+  function fcEtat(v){v=+v;if(!fourch||!v)return '';return v<fourch[0]?'bas':v>fourch[1]?'haut':'dans'}
+  function fcTexte(v){const e=fcEtat(v);return e==='dans'?'dans ta fourchette':e==='bas'?'sous ta fourchette':e==='haut'?'au-dessus de ta fourchette':''}
+  function poulsHTML(){
+    if(PL.etat==='compte'){const r=Math.max(0,15-Math.floor((Date.now()-PL.debut)/1000));
+      return `<div class="pl-boite"><div class="pl-coeur" aria-hidden="true"><svg viewBox="0 0 32 29"><path d="M16 29 2.6 15.4A8 8 0 0 1 14 4.2L16 6.2l2-2A8 8 0 0 1 29.4 15.4Z"/></svg></div>
+        <div class="pl-t" aria-live="polite">${r}</div><p class="pl-c">Compte tes battements… le bip te dira d’arrêter.</p>
+        <svg class="pl-ecg" viewBox="0 0 200 40" preserveAspectRatio="none" aria-hidden="true"><g class="pl-defile">${ecgPath()}</g></svg>
+        <button type="button" class="fin-lien" data-ch="poulsx">Annuler</button></div>`}
+    if(PL.etat==='saisie'){const n=+PL.n,ok=n>=10&&n<=58,b=n*4;
+      return `<div class="pl-boite"><label for="ch-batt" class="pl-c"><b>Combien de battements as-tu comptés ?</b></label>
+        <input id="ch-batt" type="number" inputmode="numeric" min="5" max="60" placeholder="ex. 38" value="${esc(PL.n)}">
+        <p class="pl-res ${ok?fcEtat(b):''}">${ok?`${n} × 4 = <b>${b} pulsations/min</b>${fcTexte(b)?' · '+fcTexte(b):''}`:'Tape le nombre compté : l’appli le multiplie par 4.'}</p>
+        <div class="fin-ligne"><button type="button" class="fin-bt" data-ch="poulsre">Recommencer</button><button type="button" class="fin-bt plein" data-ch="poulsok"${ok?'':' disabled'}>Valider ${ok?b:''}</button></div></div>`}
+    return `<button type="button" class="pl-go" data-ch="pouls"><span class="pl-mini" aria-hidden="true">❤</span><span><b>Prendre mon pouls</b><small>Deux doigts sur le cou ou le poignet, puis touche : 15 s</small></span></button>`}
+  function poulsTick(){if(PL.etat!=='compte'){clearInterval(poulsT);poulsT=null;return}
+    const r=15-(Date.now()-PL.debut)/1000,t=v.querySelector('.pl-t');
+    if(r<=0){clearInterval(poulsT);poulsT=null;PL.etat='saisie';son(660,.3,.6);setTimeout(()=>son(660,.3,.6),350);try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(x){}
+      lireChamps();peindreFin();const i=v.querySelector('#ch-batt');if(i)i.focus();return}
+    if(t)t.textContent=Math.ceil(r)}
+  const etapes=()=>{const fv=String(fc).trim();return {pouls:!!fv&&+fv>=40&&+fv<=230,exe:ex.every((e,j)=>crit[j].every(x=>x===0||x===1)),effort:!!rpe,decision:!!regle,
+    coach:COMPLET?com.trim().length>=3&&conseil.trim().length>=3:!!(coach||conseil.trim()||com.trim())}};
+  function majFin(){const E=etapes();Object.keys(E).forEach(k=>{const el=v.querySelector(`[data-et="${k}"]`);if(el)el.classList.toggle('faite',E[k])});
+    const ok=!manque().length,b=v.querySelector('[data-ch="enreg"]'),h=v.querySelector('.ch-indic');if(b)b.disabled=!ok;if(h){h.textContent=ok?'✓ Prêt à enregistrer':'Il manque : '+manque().join(', ');h.classList.toggle('pret',ok)}
+    const c=v.querySelector('.fin-fc');if(c){const e=fcEtat(fc);c.className='fin-fc '+e;c.textContent=fourch?`Fourchette de ton mobile : ${fourch[0]} à ${fourch[1]}${e?' · '+fcTexte(fc):''}`:''}}
   function peindreFin(){
-    const pret=!manque().length,rc=regleConseillee(),coachs=opts.coachs||[];
+    const pret=!manque().length,rc=regleConseillee(),coachs=opts.coachs||[],E=etapes();
+    const et=(k,n,titre,sous,corps)=>`<section class="fin-et${E[k]?' faite':''}" data-et="${k}"><h4><span class="fin-n" aria-hidden="true"><i>${n}</i></span>${titre}${sous?` <small>${sous}</small>`:''}</h4>${corps}</section>`;
     v.innerHTML=`<div class="chr fin"><p class="ch-titre">Terminé</p><p class="ch-sous">${esc(opts.athlete||'')} · ${esc(opts.titreWod||'')}</p>
       ${bilanHTML()}
-      <div class="ch-form"><label for="ch-fc">Fréquence cardiaque (pouls 15 s × 4, tout de suite)</label><input id="ch-fc" type="number" inputmode="numeric" min="40" max="230" placeholder="ex. 152" value="${fc||''}">${fourch?`<p class="ch-lab">Fourchette de ton mobile : ${fourch[0]} à ${fourch[1]}</p>`:''}
-      <p class="ch-lab">Exécution (le coach) : touche chaque critère, ✓ réussi ou ✗ à revoir${R.critLog.length?' · proposé d’après le WOD':''}</p>
-      <div class="ch-notes">${ex.map((e,j)=>{const n=noteCrit(crit[j]);return `<div class="ch-note"><span>${nomEx(j)}${n?` <small>· ${n}/4 ${esc(NOTES[n-1][1])}</small>`:''}</span><span class="ch-c3">${CRIT.map((c,k)=>`<button type="button" class="${crit[j][k]===1?'ok':crit[j][k]===0?'ko':''}" data-ch="crit" data-i="${j}" data-k="${k}">${crit[j][k]===1?'✓':crit[j][k]===0?'✗':'?'} ${c}</button>`).join('')}</span></div>`}).join('')}</div>
-      <p class="ch-lab">Effort perçu de 1 à 10 (obligatoire)</p><div class="ch-rpe">${RPE.slice(1).map((l,k)=>`<button type="button" class="r${k+1}${rpe===k+1?' on':''}" data-ch="rpe" data-v="${k+1}"><b>${k+1}</b>${l}</button>`).join('')}</div>
-      ${COMPLET?`<p class="ch-lab">Où l’as-tu senti ? (1 = rien, 5 = au maximum)</p><div class="ch-dims">${[['mu','Muscles'],['so','Souffle'],['te','Tête']].map(([d,l])=>`<div><span>${l}</span>${[1,2,3,4,5].map(x=>`<button type="button" class="${dims[d]===x?'on':''}" data-ch="dim" data-d="${d}" data-v="${x}">${x}</button>`).join('')}</div>`).join('')}</div>`:''}
-      <p class="ch-lab">Au prochain WOD, je… (obligatoire)${rc?' · conseillé d’après ta FC et ton effort : <b>'+esc(REGLES.find(x=>x[0]===rc)[1])+'</b>':''}</p>
-      <div class="ch-regle">${REGLES.map(([k,l,d])=>`<button type="button" class="${regle===k?'on':''}${rc===k?' conseil':''}" data-ch="regle" data-v="${k}"><b>${l}</b>${d}</button>`).join('')}</div>
-      ${coachs.length?`<label for="ch-coach" class="ch-lab">Coach (celui qui a regardé et compté)</label><select id="ch-coach">${coachs.map(n=>`<option${n===coach?' selected':''}>${esc(n)}</option>`).join('')}<option value=""${coach?'':' selected'}>Personne (seul)</option></select>`:''}
-      <label for="ch-cons" class="ch-lab">Conseil du coach pour la suite${COMPLET?' (obligatoire)':' (facultatif)'}</label><textarea id="ch-cons" rows="2" placeholder="ex. descends plus bas au squat, garde le dos droit">${esc(conseil)}</textarea>
-      <label for="ch-com" class="ch-lab">Décris ce WOD : ce qui était difficile, ce que tu as réussi${COMPLET?' (obligatoire)':' (facultatif)'}</label><textarea id="ch-com" rows="2">${esc(com)}</textarea>
-      <p class="ch-lab ch-indic">${pret?'✓ Prêt à enregistrer':'⚠ Il manque : '+manque().join(', ')}</p>
+      <div class="ch-form">
+      ${et('pouls',1,'Mon pouls','tout de suite après l’effort',`${poulsHTML()}
+        <label for="ch-fc" class="fin-petit">Ma fréquence cardiaque (calculée, ou lue sur une montre)</label><input id="ch-fc" type="number" inputmode="numeric" min="40" max="230" placeholder="ex. 152" value="${fc||''}">
+        ${fourch?`<p class="fin-fc ${fcEtat(fc)}">Fourchette de ton mobile : ${fourch[0]} à ${fourch[1]}${fcEtat(fc)?' · '+fcTexte(fc):''}</p>`:''}`)}
+      ${et('exe',2,'L’exécution','le coach touche chaque critère : ✓ réussi, ✗ à revoir'+(R.critLog.length?' · proposé d’après le WOD':''),`<div class="ch-notes">${ex.map((e,j)=>{const n=noteCrit(crit[j]);return `<div class="ch-note"><span>${nomEx(j)}${n?` <small>· ${n}/4 ${esc(NOTES[n-1][1])}</small>`:''}</span><span class="ch-c3">${CRIT.map((c,k)=>`<button type="button" class="${crit[j][k]===1?'ok':crit[j][k]===0?'ko':''}" data-ch="crit" data-i="${j}" data-k="${k}">${crit[j][k]===1?'✓':crit[j][k]===0?'✗':'?'} ${c}</button>`).join('')}</span></div>`}).join('')}</div>`)}
+      ${et('effort',3,'Mon effort','de 1 (très facile) à 10 (maximal) · obligatoire',`<div class="ch-rpe">${RPE.slice(1).map((l,k)=>`<button type="button" class="r${k+1}${rpe===k+1?' on':''}" data-ch="rpe" data-v="${k+1}"><b>${k+1}</b>${l}</button>`).join('')}</div>
+        ${COMPLET?`<p class="ch-lab">Où l’as-tu senti ? (1 = rien, 5 = au maximum)</p><div class="ch-dims">${[['mu','Muscles'],['so','Souffle'],['te','Tête']].map(([d,l])=>`<div><span>${l}</span>${[1,2,3,4,5].map(x=>`<button type="button" class="${dims[d]===x?'on':''}" data-ch="dim" data-d="${d}" data-v="${x}">${x}</button>`).join('')}</div>`).join('')}</div>`:''}`)}
+      ${et('decision',4,'Ma décision pour le prochain WOD','obligatoire',`${rc?`<p class="fin-conseil">Conseillé d’après ta FC et ton effort : <b>${esc(REGLES.find(x=>x[0]===rc)[1])}</b></p>`:''}
+        <div class="ch-regle">${REGLES.map(([k,l,d])=>`<button type="button" class="${regle===k?'on':''}${rc===k?' conseil':''}" data-ch="regle" data-v="${k}"><i aria-hidden="true">${ICO[k]}</i><span><b>${l}</b>${d}</span></button>`).join('')}</div>`)}
+      ${et('coach',5,'Coach et commentaires',COMPLET?'obligatoire':'facultatif',`${coachs.length?`<label for="ch-coach" class="ch-lab">Coach (celui qui a regardé et compté)</label><select id="ch-coach">${coachs.map(n=>`<option${n===coach?' selected':''}>${esc(n)}</option>`).join('')}<option value=""${coach?'':' selected'}>Personne (seul)</option></select>`:''}
+        <label for="ch-cons" class="ch-lab">Conseil du coach pour la suite</label><textarea id="ch-cons" rows="2" placeholder="ex. descends plus bas au squat, garde le dos droit">${esc(conseil)}</textarea>
+        <label for="ch-com" class="ch-lab">Décris ce WOD : ce qui était difficile, ce que tu as réussi</label><textarea id="ch-com" rows="2">${esc(com)}</textarea>`)}
+      </div>
+      <div class="fin-pied"><p class="ch-lab ch-indic${pret?' pret':''}">${pret?'✓ Prêt à enregistrer':'Il manque : '+manque().join(', ')}</p>
       <div class="ch-bas"><button type="button" data-ch="annuler" class="${jeter?'confirme':''}">${jeter?'Sûr ? Le WOD sera perdu':'Ne pas enregistrer'}</button><button type="button" class="ch-ok" data-ch="enreg"${pret?'':' disabled'}>Enregistrer</button></div></div></div>`;
   }
   let ressenti=0,com='',fc='',jeter=false,rpe=0,regle='',conseil='',coach=opts.coach||'';const notes=ex.map(()=>null),crit=ex.map(()=>[null,null,null]),dims={};
   const lireChamps=()=>{const g=id=>v.querySelector(id);if(g('#ch-com'))com=g('#ch-com').value;if(g('#ch-cons'))conseil=g('#ch-cons').value;if(g('#ch-fc'))fc=g('#ch-fc').value;if(g('#ch-coach'))coach=g('#ch-coach').value};
-  function fermer(){clearInterval(tick);eveil(false);v.remove();document.documentElement.classList.remove('chrono-ouvert');document.removeEventListener('visibilitychange',vis)}
+  function fermer(){clearInterval(tick);clearInterval(poulsT);eveil(false);v.remove();document.documentElement.classList.remove('chrono-ouvert');document.removeEventListener('visibilitychange',vis)}
   const vis=()=>{if(document.visibilityState==='hidden')etat(true)};
   document.addEventListener('visibilitychange',vis);
-  v.addEventListener('input',e=>{if(!fini)return;lireChamps();const ok=!manque().length,b=v.querySelector('[data-ch="enreg"]'),h=v.querySelector('.ch-indic');if(b)b.disabled=!ok;if(h)h.textContent=ok?'✓ Prêt à enregistrer':'⚠ Il manque : '+manque().join(', ')});
+  v.addEventListener('input',e=>{if(!fini)return;
+    if(e.target.id==='ch-batt'){PL.n=e.target.value;const n=+PL.n,ok=n>=10&&n<=58,b=n*4,r=v.querySelector('.pl-res'),bt=v.querySelector('[data-ch="poulsok"]');
+      if(r){r.className='pl-res '+(ok?fcEtat(b):'');r.innerHTML=ok?`${n} × 4 = <b>${b} pulsations/min</b>${fcTexte(b)?' · '+fcTexte(b):''}`:'Tape le nombre compté : l’appli le multiplie par 4.'}
+      if(bt){bt.disabled=!ok;bt.textContent='Valider '+(ok?b:'')}return}
+    lireChamps();majFin()});
   v.addEventListener('change',e=>{if(fini&&e.target.id==='ch-coach')coach=e.target.value});
   v.addEventListener('click',e=>{const b=e.target.closest('[data-ch]');if(!b)return;const a=b.dataset.ch,t=ecoule(),o=ou(t),te=Math.max(0,t-PREP);
     if(a!=='stop')arret=false;
@@ -240,6 +277,10 @@ function lancer(W,opts){
     else if(a==='sonmode'){modeSuivant();if(mode()==='vibrate')try{navigator.vibrate&&navigator.vibrate(60)}catch(x){}}
     else if(a==='pause'){if(pauseA){pauseMs+=Date.now()-pauseA;pauseA=null}else pauseA=Date.now();etat(true)}
     else if(a==='stop'){if(!arret){arret=true}else{if(W.f!=='fortime')R.arrete=Math.round(te);terminer();return}}
+    else if(a==='pouls'){lireChamps();PL.etat='compte';PL.debut=Date.now();PL.n='';son(880,.15,.5);try{navigator.vibrate&&navigator.vibrate(80)}catch(x){}peindreFin();clearInterval(poulsT);poulsT=setInterval(poulsTick,200);return}
+    else if(a==='poulsre'){lireChamps();PL.etat='';PL.n='';peindreFin();return}
+    else if(a==='poulsx'){lireChamps();clearInterval(poulsT);poulsT=null;PL.etat='';peindreFin();return}
+    else if(a==='poulsok'){lireChamps();const n=+PL.n;if(n>=10&&n<=58){fc=String(n*4);PL.etat='';PL.n='';jeter=false;peindreFin()}return}
     else if(a==='crit'){lireChamps();const i=+b.dataset.i,k=+b.dataset.k;crit[i][k]=crit[i][k]===1?0:1;jeter=false;peindreFin();return}
     else if(a==='rpe'){lireChamps();rpe=+b.dataset.v;jeter=false;peindreFin();return}
     else if(a==='dim'){lireChamps();dims[b.dataset.d]=+b.dataset.v;peindreFin();return}
