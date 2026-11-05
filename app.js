@@ -459,6 +459,7 @@ const sauvAuto=()=>S&&S.sauvAuto!==false;
 function recevoirClasse(o){
   if(o.t!=='C')throw new Error('Ce n’est pas le QR de la classe.');
   const c={classe:o.c,eleves:o.l||[],lien:o.u||'',niv:o.n||'p',dem:o.m||'p',s:o.s||'l'};
+  if(window.EPSCode)EPSCode.memoriserCle(o.c,o.cc);
   ROOT.classes[o.c]=c;ecrireRoot();
   if(!S||(S.eleves.length&&S.classe&&S.classe!==o.c)){setTimeout(()=>{if(S)verrouiller().then(rendre);demanderCode('Nouveau binôme · '+o.c,'Choisissez un code secret de 4 chiffres. Retenez-le : il sera demandé à chaque cours.',x=>nouveauGroupe(o.c,x),true)},300);return 'Classe '+o.c+' enregistrée.'}
   S.cfg=JSON.parse(JSON.stringify(c));S.classe=o.c;sauver();rendre();
@@ -650,3 +651,8 @@ document.addEventListener('click',e=>{if(!e.target.closest('#theme'))return;cons
   if(d)document.documentElement.dataset.theme='dark';else delete document.documentElement.dataset.theme;try{localStorage.setItem('eps_theme',d?'dark':'light')}catch(x){}majTheme()});
 majTheme();
 rendre();
+
+/* Code du cours (eps-code.js, commun) : la saisie ne s’ouvre qu’en cours, avec le code à 4 chiffres du professeur (2 h). */
+if(window.EPSCode)EPSCode.eleve({app:'cte',classe:()=>S&&S.classe||'',seance:()=>S?String(S.seance):'',seances:()=>Array.from({length:NB_SEANCES},(_,i)=>String(i+1)),nom:s=>'Séance '+s,
+  ouvrir:s=>{if(!S)return;S.seance=+s;S.jours=S.jours||{};S.jours[today()]=+s;sauver();rendre()},
+  actif:()=>!!S&&['seance','moi','jourj'].includes(S.tab),libre:['qui','tab','seance','fiche','video','fermer','fermerVoile','imprimer','qrnav','installok'],demo:()=>!!S&&S.classe==='DEMO'});
