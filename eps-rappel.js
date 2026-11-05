@@ -3,7 +3,8 @@
    Source : mon-eps/atelier/applis-eleves/eps-rappel.js (recopié tel quel).
    À chaque ouverture de l'appli : rappel sur le téléphone portable et les
    images des camarades, avec un bouton « J'ai compris ».
-   Pas d'affichage en mode démo (?demo) ni dans une page incluse (iframe).
+   Pas d'affichage en mode démo (?demo), dans une page incluse (iframe), ni
+   pendant les tests automatiques (navigateur piloté).
    Texte modifiable ci-dessous (une ligne par paragraphe).
    ===================================================================== */
 (function(){
@@ -13,7 +14,8 @@
     'Pendant l’EPS, il sert uniquement au travail demandé : aucun autre usage (messages, réseaux sociaux, jeux, musique…).',
     'Tu ne filmes ni ne photographies personne sans son accord et celui du professeur, et aucune image ne quitte l’appli.'
   ],source:'Règlement intérieur du lycée Georges Pompidou.',bouton:'J’ai compris'};
-  if(window.__epsRappel||window.top!==window.self||/[?&]demo\b/.test(location.search))return;
+  // Pas de rappel pour les tests automatiques (navigateur piloté : navigator.webdriver), ni en démo, ni dans une iframe.
+  if(window.__epsRappel||navigator.webdriver||window.top!==window.self||/[?&]demo\b/.test(location.search))return;
   window.__epsRappel=true;
   function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
   function montrer(){
