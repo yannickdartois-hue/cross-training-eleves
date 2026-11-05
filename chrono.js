@@ -137,15 +137,15 @@ function lancer(W,opts){
       <div class="ch-boutons"><button type="button" class="ch-nep-p" data-ch="nepskip">Passer</button><button type="button" class="ch-gros ch-fini" data-ch="nepok">Valider</button></div></div>`:'';
     // L'écran n'est reconstruit que s'il change : sinon les boutons seraient remplacés 5 fois par seconde
     // (un appui « +1 » pourrait se perdre, la page ne pourrait pas défiler). Les temps sont mis à jour à part.
-    const html=`<div class="chr ${couleur}${pauseA?' pause':''}"><div class="ch-haut"><span>${esc(opts.athlete||'')}</span><span>${esc(opts.titreWod||'')}</span><span class="ch-reste"></span></div>
-      <p class="ch-titre">${titre}</p><p class="ch-temps"></p><p class="ch-sous">${sous}</p>
+    const html=`<div class="chr ${couleur}${pauseA?' pause':''}"><div class="ch-haut"><span>${esc(opts.athlete||'')}</span><span>${esc(opts.titreWod||'')}</span></div>
+      <p class="ch-titre">${titre}</p><p class="ch-temps"></p>${sansCap?'':'<p class="ch-reste-l">Temps total restant <span class="ch-reste"></span></p>'}<p class="ch-sous">${sous}</p>
       <div class="ch-corps">${corps}</div>
       <div class="ch-bas"><button type="button" class="ch-norep" data-ch="norep"${pauseA||typ==='rep'||typ==='prep'?' disabled':''}>No rep <b>${R.norep}</b></button><button type="button" data-ch="pause">${pauseA?'Reprendre':'Pause'}</button><button type="button" data-ch="sonmode">${libMode()}</button><button type="button" data-ch="stop" class="${arret?'confirme':''}">${arret?'Sûr ? Retoucher':'Arrêter'}</button></div>${nep}</div>`;
     if(html!==dernierHtml){const c=v.querySelector('.chr'),y=c?c.scrollTop:0,av=[...v.querySelectorAll('.ch-img')];v.innerHTML=html;dernierHtml=html;
       // l'image d'un exercice déjà affichée est remise telle quelle (sinon elle scintille à chaque « +1 »)
       v.querySelectorAll('.ch-img').forEach((n,k)=>{const o=av.find(x=>x.innerHTML===n.innerHTML);if(o){av.splice(av.indexOf(o),1);n.replaceWith(o)}});
       const n=v.querySelector('.chr');if(n&&y)n.scrollTop=y}
-    v.querySelector('.ch-temps').textContent=grand;v.querySelector('.ch-reste').textContent=sansCap?'':'reste '+mmss(fin);
+    v.querySelector('.ch-temps').textContent=grand;const rs=v.querySelector('.ch-reste');if(rs)rs.textContent=mmss(fin);
     etat();
   }
   function exoDuRound(i){return root.CTL.exoDuRound(W,i)}
