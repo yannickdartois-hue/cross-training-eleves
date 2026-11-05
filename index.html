@@ -346,6 +346,20 @@ html.chrono-ouvert,html.chrono-ouvert body{overflow:hidden}
 .ch-rpe .r1,.ch-rpe .r2{background:#bbf7d0}.ch-rpe .r3,.ch-rpe .r4{background:#d9f99d}.ch-rpe .r5,.ch-rpe .r6{background:#fde68a}.ch-rpe .r7,.ch-rpe .r8{background:#fdba74}.ch-rpe .r9,.ch-rpe .r10{background:#fca5a5}
 .ch-rpe button.on{outline:4px solid #fff;outline-offset:1px;transform:scale(1.04)}
 .ch-dims{display:grid;gap:6px}.ch-dims div{display:flex;align-items:center;gap:4px}.ch-dims span{min-width:80px;font-weight:700}.ch-dims button{min-width:44px;min-height:44px;border-radius:10px;border:2px solid rgba(255,255,255,.7);background:transparent;color:#fff;font-weight:800}.ch-dims button.on{background:#fff;color:#1f2937}
+/* ----- Objectif, récupération, alertes, conseils, inaptitude, fiche d'épreuve (5 nov.) ----- */
+.ch-vise{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 12px;background:rgba(255,255,255,.12);border-radius:14px;padding:10px 14px;margin:8px 0;max-width:620px}
+.ch-vise label{font:800 20px var(--d)}.ch-vise select{min-height:52px;min-width:90px;border-radius:12px;border:0;font:800 24px var(--d);text-align:center;color:#1c2128}.ch-vise small{font-size:16px;opacity:.9}
+.ch-visee{margin:0;padding:10px 14px;border-radius:14px;background:#fff;border:1px solid #dde2e8;font-size:17px;color:#1c2128}
+.ch-visee.juste{border-color:#86efac;background:#f0fdf4}.ch-visee.proche{border-color:#fde68a}.ch-visee.loin{border-color:#fdba74;background:#fff7ed}
+.pl-go.rec{background:#e0f2fe;color:#0c4a6e;margin-top:10px}.pl-go.rec .pl-mini{color:#0369a1;animation:none}
+.pl-boite.rec{background:#f0f9ff;border-color:#bae6fd}.pl-recup{margin:10px 0 0;padding:10px 14px;border-radius:12px;background:#f0f9ff;color:#0c4a6e;font-size:17px}
+.fin-alerte{background:#fee2e2;border:2px solid #dc2626;color:#7f1d1d;border-radius:14px;padding:12px 14px;font-size:18px}
+.fin-pourquoi{background:#fff7ed;border:1px solid #fdba74;border-radius:12px;padding:10px 12px;margin-bottom:10px}.fin-pourquoi p{margin:0 0 8px;font-size:16px}
+.fin-chips{display:flex;flex-wrap:wrap;gap:6px}.fin-chips button{min-height:44px;border-radius:22px;border:1.5px solid #cbd5e1;background:#fff;color:#1c2128;padding:4px 14px;font-size:16px;text-align:left}
+.fin-chips button.on{background:#1c2128;color:#fff;border-color:#1c2128}
+.fin-chips.cons button{border-radius:12px;max-width:100%}.fin-chips.cons button small{display:block;color:#b45309;font-weight:700;font-size:14px}
+.restr{margin:6px 0}
+#fiche-imp h1{font-size:18pt;margin:0 0 6px}#fiche-imp h2{font-size:14pt;margin:14px 0 4px;border-bottom:1px solid #000}#fiche-imp h3{font-size:12pt;margin:10px 0 4px}
 .ch-repere{margin:0;font-size:clamp(17px,2.6vw,24px)}.ch-repere b{font:800 1.25em var(--d)}
 .ch-rattrape{background:#fff;color:#1c2128;border-radius:16px;padding:12px 16px;display:flex;flex-direction:column;gap:6px;align-items:center;max-width:520px;width:100%}
 .ch-rattrape b{font:800 22px var(--d);color:#b45309}.ch-rattrape select{min-height:56px;min-width:110px;font:800 26px var(--d);border-radius:12px;border:1.5px solid #cbd5e1;text-align:center}

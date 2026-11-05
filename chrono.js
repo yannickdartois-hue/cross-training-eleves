@@ -72,6 +72,12 @@ function lancer(W,opts){
   function exoHTML(i,petit,reps,sansReg){const e=ex[i],m=exo(i);if(!m)return '';
     return `<div class="ch-exo${petit?' petit':''}"><div class="ch-img"${video(e)?` data-video="${e.m}" title="Voir la vidéo"`:''}>${opts.visuel(m)}${video(e)?'<span class="bt-video mini" aria-hidden="true">▶</span>':''}</div><div><b>${esc(m.nom)}</b>${reps!=null?`<span class="ch-reps">${reps}<small> rép.${kg(i)}</small></span>`:kg(i)?`<span>${kg(i).slice(3)}</span>`:''}<span class="ch-ver">${verLib(R.versions[i])}</span>
       ${sansReg?'':`<div class="ch-reg"><button type="button" data-ch="moins" data-i="${i}" aria-label="Version plus facile">−</button><button type="button" data-ch="plusv" data-i="${i}" aria-label="Version plus difficile">+</button></div>`}</div></div>`}
+  // Objectif annoncé avant le WOD, comparé au résultat (connaissance de soi)
+  function viseLib(){return W.f==='tabata'?['un plancher de','40','répétitions au round le plus faible']:W.f==='amrap'?['','30','tours complets']
+    :W.f==='emom'||W.f==='emom1'?['',String(p.min),'minutes validées sur '+p.min]:W.f==='fortime'?['',String(NBFT),(p.pal?'paliers':'tours')+' terminés sur '+NBFT]:null}
+  function realise(){if(W.f==='tabata'){const C=R.rounds.filter(x=>x!=null);return C.length?Math.min(...C):null}
+    if(W.f==='amrap')return R.tours;if(W.f==='fortime')return R.ftPal;
+    if(W.f==='emom1')return R.minutes.filter(m=>m&&m.ok).length;if(W.f==='emom')return R.restants.filter(x=>x>0).length;return null}
   const avenir=(j,txt)=>`<p class="ch-avenir">→ ${txt||'À venir'} : <b>${nomEx(j)}</b></p>`;
   const zone=r=>r>20?'z1':r>10?'z2':'z3'; // couleur de la minute : > 20 s, 10 à 20 s, < 10 s
   // saisie complète seulement : les critères sont demandés au partenaire après chaque exercice validé
@@ -163,7 +169,10 @@ function lancer(W,opts){
 
   /* ---------- Bilan détaillé (comme les bilans de l'appli d'origine) ---------- */
   const barres=(L,lab,col,txt)=>{const mx=Math.max(1,...L);return `<div class="ch-barres">${L.map((x,k)=>`<div><small>${txt&&txt(k)!=null?txt(k):x}</small><i style="height:${Math.max(4,Math.round(x/mx*70))}px;background:${col(x,k)}"></i><small>${lab(k)}</small></div>`).join('')}</div>`};
-  function bilanHTML(){
+  function viseHTML(){if(R.vise==null)return '';const r=realise();if(r==null)return '';const d=r-R.vise;
+    return `<p class="ch-visee ${d===0?'juste':Math.abs(d)<=1?'proche':'loin'}">🎯 Visé : <b>${R.vise}</b> · réalisé : <b>${r}</b> ${d===0?'· pile !':d>0?'· +'+d+' : tu peux viser plus haut':'· '+d+' : objectif trop ambitieux aujourd’hui'}</p>`}
+  function bilanHTML(){return viseHTML()+bilanHTML0()}
+  function bilanHTML0(){
     const sumReps=k=>ex.slice(0,k).reduce((a,e)=>a+(+e.reps||0),0);
     if(W.f==='tabata'){const L=R.rounds.map(x=>x==null?null:x);if(!L.length)return '';const C=L.filter(x=>x!=null),nc=L.length-C.length;
       if(!C.length)return `<div class="ch-bil"><p><b>Aucun round compté</b> : pas de score pour ce Tabata.</p></div>`;
@@ -197,25 +206,36 @@ function lancer(W,opts){
   function regleConseillee(){const f=+fc||0;if(fourch&&f&&f>fourch[1]||rpe>=9)return 'baisse';if(fourch&&f&&f<fourch[0]||rpe&&rpe<=3)return 'monte';return rpe||f?'garde':''}
   const manque=()=>{const L=[];if(String(fc).trim()&&(isNaN(+fc)||+fc<40||+fc>230))L.push('une FC possible (entre 40 et 230)');if(!rpe)L.push('l’effort perçu');if(!regle)L.push('ta décision pour le prochain WOD');if(COMPLET&&com.trim().length<3)L.push('le commentaire');if(COMPLET&&conseil.trim().length<3)L.push('le conseil du coach');return L};
   /* ---------- Prise du pouls assistée : 15 s comptées, battements × 4 ---------- */
-  const PL={etat:'',debut:0,n:''};let poulsT=null;
+  const PL={etat:'',debut:0,n:'',rec:false};let poulsT=null,fcRec='',pourquoi='';
+  const POURQUOI=['Fatigue','Manque de sommeil','Exercice mal maîtrisé','Stress','Peu motivé(e)','Je ne sais pas'];
+  const CONS_GEN=['Ralentis pour bien te placer','Souffle à l’effort, inspire au retour','Va au bout du mouvement, quitte à faire moins de répétitions'];
+  const alerte=()=>+fc>200||(rpe===10&&opts.rpeAvant===10);
+  const contradiction=()=>{const e=fcEtat(fc);return !!(fc&&rpe&&((e==='dans'||e==='bas')&&rpe>=8||e==='haut'&&rpe<=3))};
   const ICO={baisse:'↓',garde:'=',monte:'↑',recup:'⏱'};
   const ECG='M0 20H28L33 17L38 20H44L47 25L51 3L55 34L59 20H68Q74 13 80 20H100';
   const ecgPath=()=>[0,100,200,300].map(x=>`<path d="${ECG}" transform="translate(${x} 0)"/>`).join('');
   function fcEtat(v){v=+v;if(!fourch||!v)return '';return v<fourch[0]?'bas':v>fourch[1]?'haut':'dans'}
   function fcTexte(v){const e=fcEtat(v);return e==='dans'?'dans ta fourchette':e==='bas'?'sous ta fourchette':e==='haut'?'au-dessus de ta fourchette':''}
   function poulsHTML(){
+    if(PL.etat==='attente'){const r=Math.max(0,60-Math.floor((Date.now()-PL.debut)/1000));
+      return `<div class="pl-boite rec"><p class="pl-c"><b>Récupère, reste debout et marche doucement.</b></p><div class="pl-t">${r}</div><p class="pl-c">Au bip, pose tes doigts et compte 15 s.</p><button type="button" class="fin-lien" data-ch="poulsx">Annuler</button></div>`}
     if(PL.etat==='compte'){const r=Math.max(0,15-Math.floor((Date.now()-PL.debut)/1000));
       return `<div class="pl-boite"><div class="pl-coeur" aria-hidden="true"><svg viewBox="0 0 32 29"><path d="M16 29 2.6 15.4A8 8 0 0 1 14 4.2L16 6.2l2-2A8 8 0 0 1 29.4 15.4Z"/></svg></div>
         <div class="pl-t" aria-live="polite">${r}</div><p class="pl-c">Compte tes battements… le bip te dira d’arrêter.</p>
         <svg class="pl-ecg" viewBox="0 0 200 40" preserveAspectRatio="none" aria-hidden="true"><g class="pl-defile">${ecgPath()}</g></svg>
         <button type="button" class="fin-lien" data-ch="poulsx">Annuler</button></div>`}
     if(PL.etat==='saisie'){const n=+PL.n,ok=n>=10&&n<=58,b=n*4;
-      return `<div class="pl-boite"><label for="ch-batt" class="pl-c"><b>Combien de battements as-tu comptés ?</b></label>
+      return `<div class="pl-boite"><label for="ch-batt" class="pl-c"><b>${PL.rec?'Récupération : c':'C'}ombien de battements as-tu comptés ?</b></label>
         <input id="ch-batt" type="number" inputmode="numeric" min="5" max="60" placeholder="ex. 38" value="${esc(PL.n)}">
         <p class="pl-res ${ok?fcEtat(b):''}">${ok?`${n} × 4 = <b>${b} pulsations/min</b>${fcTexte(b)?' · '+fcTexte(b):''}`:'Tape le nombre compté : l’appli le multiplie par 4.'}</p>
         <div class="fin-ligne"><button type="button" class="fin-bt" data-ch="poulsre">Recommencer</button><button type="button" class="fin-bt plein" data-ch="poulsok"${ok?'':' disabled'}>Valider ${ok?b:''}</button></div></div>`}
+    const fv=+fc,rv=+fcRec;
+    if(fv>=40&&fv<=230)return (rv?`<p class="pl-recup">Récupération : <b>${fv} → ${rv}</b> · <b>−${Math.max(0,fv-rv)}</b> pulsations en 1 min${fv-rv>=30?' : très bonne récupération':fv-rv>=20?' : bonne récupération':' : récupération lente'}</p>`:
+      `<button type="button" class="pl-go rec" data-ch="poulsrec"><span class="pl-mini" aria-hidden="true">⏱</span><span><b>FC de récupération</b><small>Reprends ton pouls dans 1 min : on mesure combien il a baissé</small></span></button>`);
     return `<button type="button" class="pl-go" data-ch="pouls"><span class="pl-mini" aria-hidden="true">❤</span><span><b>Prendre mon pouls</b><small>Deux doigts sur le cou ou le poignet, puis touche : 15 s</small></span></button>`}
-  function poulsTick(){if(PL.etat!=='compte'){clearInterval(poulsT);poulsT=null;return}
+  function poulsTick(){if(PL.etat==='attente'){const r=60-(Date.now()-PL.debut)/1000,t=v.querySelector('.pl-t');
+      if(r<=0){PL.etat='compte';PL.debut=Date.now();son(880,.15,.5);try{navigator.vibrate&&navigator.vibrate(120)}catch(x){}lireChamps();peindreFin()}else if(t)t.textContent=Math.ceil(r);return}
+    if(PL.etat!=='compte'){clearInterval(poulsT);poulsT=null;return}
     const r=15-(Date.now()-PL.debut)/1000,t=v.querySelector('.pl-t');
     if(r<=0){clearInterval(poulsT);poulsT=null;PL.etat='saisie';son(660,.3,.6);setTimeout(()=>son(660,.3,.6),350);try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(x){}
       lireChamps();peindreFin();const i=v.querySelector('#ch-batt');if(i)i.focus();return}
@@ -237,9 +257,12 @@ function lancer(W,opts){
       ${et('exe',2,'L’exécution','tout est proposé réussi : le coach touche ce qui est raté, puis « J’ai regardé »'+(R.critLog.length?' · proposé d’après le WOD':''),`<div class="ch-notes">${ex.map((e,j)=>{const n=noteCrit(crit[j]);return `<div class="ch-note${vu[j]?'':' a-voir'}"><span>${nomEx(j)}${n&&vu[j]?` <small>· ${n}/4 ${esc(NOTES[n-1][1])}</small>`:''}</span><span class="ch-c3">${CRIT.map((c,k)=>`<button type="button" class="${crit[j][k]===1?'ok':crit[j][k]===0?'ko':''}" data-ch="crit" data-i="${j}" data-k="${k}">${crit[j][k]===1?'✓ '+c:crit[j][k]===0?'✗ '+c:c+' ?'}</button>`).join('')}${vu[j]?'':`<button type="button" class="vu" data-ch="vu" data-i="${j}">J’ai regardé</button>`}</span></div>`}).join('')}</div>`)}
       ${et('effort',3,'Mon effort','de 1 (très facile) à 10 (maximal) · obligatoire',`<div class="ch-rpe">${RPE.slice(1).map((l,k)=>`<button type="button" class="r${k+1}${rpe===k+1?' on':''}" data-ch="rpe" data-v="${k+1}"><b>${k+1}</b>${l}</button>`).join('')}</div>
         ${COMPLET?`<p class="ch-lab">Où l’as-tu senti ? (1 = rien, 5 = au maximum)</p><div class="ch-dims">${[['mu','Muscles'],['so','Souffle'],['te','Tête']].map(([d,l])=>`<div><span>${l}</span>${[1,2,3,4,5].map(x=>`<button type="button" class="${dims[d]===x?'on':''}" data-ch="dim" data-d="${d}" data-v="${x}">${x}</button>`).join('')}</div>`).join('')}</div>`:''}`)}
-      ${et('decision',4,'Ma décision pour le prochain WOD','obligatoire',`${rc?`<p class="fin-conseil">Conseillé d’après ta FC et ton effort : <b>${esc(REGLES.find(x=>x[0]===rc)[1])}</b></p>`:''}
+      ${alerte()?`<div class="fin-alerte" role="alert">⚠ <b>Préviens ton professeur</b> ${+fc>200?'(FC au-dessus de 200)':'(effort maximal deux WOD de suite)'} avant de continuer.</div>`:''}
+      ${et('decision',4,'Ma décision pour le prochain WOD','obligatoire',`${contradiction()?`<div class="fin-pourquoi"><p><b>Ton ressenti et ta FC ne disent pas la même chose.</b> ${fcEtat(fc)==='haut'?'Ta FC est haute mais tu as trouvé ça facile':'Ta FC est dans ta fourchette ou en dessous, mais tu as trouvé ça très dur'}. Pourquoi, d’après toi ?</p><div class="fin-chips">${POURQUOI.map(x=>`<button type="button" class="${pourquoi===x?'on':''}" data-ch="pourquoi" data-v="${esc(x)}">${esc(x)}</button>`).join('')}</div></div>`:''}${rc?`<p class="fin-conseil">Conseillé d’après ta FC et ton effort : <b>${esc(REGLES.find(x=>x[0]===rc)[1])}</b></p>`:''}
         <div class="ch-regle">${REGLES.map(([k,l,d])=>`<button type="button" class="${regle===k?'on':''}${rc===k?' conseil':''}" data-ch="regle" data-v="${k}"><i aria-hidden="true">${ICO[k]}</i><span><b>${l}</b>${d}</span></button>`).join('')}</div>`)}
       ${et('coach',5,'Coach et commentaires',COMPLET?'obligatoire':'facultatif',`${coachs.length?`<label for="ch-coach" class="ch-lab">Coach (celui qui a regardé et compté)</label><select id="ch-coach">${coachs.map(n=>`<option${n===coach?' selected':''}>${esc(n)}</option>`).join('')}<option value=""${coach?'':' selected'}>Personne (seul)</option></select>`:''}
+        ${(()=>{const L=[];ex.forEach((e,j)=>{if(!vu[j])return;const m=exo(j)||{};(crit[j]||[]).forEach((c,k)=>{if(c===0)L.push([nomEx(j)+' · '+CRIT[k].toLowerCase(),((m.c||[])[k]||CONS_GEN[k]).replace(/\.$/,'')])})});
+          return L.length?`<p class="ch-lab">Conseils proposés (critères ratés) : touche pour l’ajouter</p><div class="fin-chips cons">${L.map(([t,c])=>`<button type="button" data-ch="cons" data-v="${esc(t.replace(/<[^>]+>/g,'')+' : '+c+'.')}"><small>${t}</small>${esc(c)}</button>`).join('')}</div>`:''})()}
         <label for="ch-cons" class="ch-lab">Conseil du coach pour la suite</label><textarea id="ch-cons" rows="2" placeholder="ex. descends plus bas au squat, garde le dos droit">${esc(conseil)}</textarea>
         <label for="ch-com" class="ch-lab">Décris ce WOD : ce qui était difficile, ce que tu as réussi</label><textarea id="ch-com" rows="2">${esc(com)}</textarea>`)}
       </div>
@@ -289,10 +312,13 @@ function lancer(W,opts){
     else if(a==='sonmode'){modeSuivant();if(mode()==='vibrate')try{navigator.vibrate&&navigator.vibrate(60)}catch(x){}}
     else if(a==='pause'){if(pauseA){pauseMs+=Date.now()-pauseA;pauseA=null}else pauseA=Date.now();etat(true)}
     else if(a==='stop'){if(!arret){arret=true}else{if(W.f!=='fortime')R.arrete=Math.round(te);terminer();return}}
-    else if(a==='pouls'){lireChamps();PL.etat='compte';PL.debut=Date.now();PL.n='';son(880,.15,.5);try{navigator.vibrate&&navigator.vibrate(80)}catch(x){}peindreFin();clearInterval(poulsT);poulsT=setInterval(poulsTick,200);return}
-    else if(a==='poulsre'){lireChamps();PL.etat='';PL.n='';peindreFin();return}
-    else if(a==='poulsx'){lireChamps();clearInterval(poulsT);poulsT=null;PL.etat='';peindreFin();return}
-    else if(a==='poulsok'){lireChamps();const n=+PL.n;if(n>=10&&n<=58){fc=String(n*4);PL.etat='';PL.n='';jeter=false;peindreFin()}return}
+    else if(a==='pouls'){lireChamps();PL.rec=false;PL.etat='compte';PL.debut=Date.now();PL.n='';son(880,.15,.5);try{navigator.vibrate&&navigator.vibrate(80)}catch(x){}peindreFin();clearInterval(poulsT);poulsT=setInterval(poulsTick,200);return}
+    else if(a==='poulsre'){lireChamps();PL.etat='';PL.n='';if(PL.rec){PL.etat='compte';PL.debut=Date.now();son(880,.15,.5);clearInterval(poulsT);poulsT=setInterval(poulsTick,200)}peindreFin();return}
+    else if(a==='poulsx'){lireChamps();clearInterval(poulsT);poulsT=null;PL.etat='';PL.rec=false;peindreFin();return}
+    else if(a==='poulsok'){lireChamps();const n=+PL.n;if(n>=10&&n<=58){if(PL.rec)fcRec=String(n*4);else fc=String(n*4);PL.etat='';PL.n='';PL.rec=false;jeter=false;peindreFin()}return}
+    else if(a==='poulsrec'){lireChamps();PL.etat='attente';PL.rec=true;PL.debut=Date.now();PL.n='';peindreFin();clearInterval(poulsT);poulsT=setInterval(poulsTick,200);return}
+    else if(a==='pourquoi'){lireChamps();pourquoi=pourquoi===b.dataset.v?'':b.dataset.v;peindreFin();return}
+    else if(a==='cons'){lireChamps();const t=b.dataset.v;conseil=(conseil.trim()?conseil.trim()+' ':'')+t;peindreFin();return}
     else if(a==='crit'){lireChamps();const i=+b.dataset.i,k=+b.dataset.k;crit[i][k]=crit[i][k]===1?0:1;vu[i]=true;jeter=false;peindreFin();return}
     else if(a==='vu'){lireChamps();vu[+b.dataset.i]=true;peindreFin();return}
     else if(a==='rpe'){lireChamps();rpe=+b.dataset.v;jeter=false;peindreFin();return}
@@ -303,7 +329,7 @@ function lancer(W,opts){
     else if(a==='enreg'){lireChamps();const fcv=+fc||null;if(manque().length)return;fermer();ex.forEach((e,j)=>{if(!vu[j])crit[j]=[null,null,null];notes[j]=noteCrit(crit[j])});
       const res={rounds:R.rounds,restants:R.restants,tours:R.tours,amIdx:R.amIdx,tourT:R.tourT,splits:R.splits,temps:R.temps,arrete:R.arrete};if(SEQ)res.minutes=R.minutes;
       opts.onEtat&&opts.onEtat(null);
-      opts.onFin({res,fc:fcv,rpe,dims:COMPLET&&Object.keys(dims).length?Object.assign({},dims):null,commentaire:com.trim(),regle,coach:coach||'',conseil:conseil.trim(),regulations:R.regul,noRep:R.norep,versions:R.versions,notes,crit:crit.map(c=>c.slice())});return}
+      opts.onFin({res,fc:fcv,fcRec:+fcRec||null,vise:R.vise!=null?R.vise:null,realise:R.vise!=null?realise():null,pourquoi:contradiction()?pourquoi:'',alerte:alerte(),rpe,dims:COMPLET&&Object.keys(dims).length?Object.assign({},dims):null,commentaire:com.trim(),regle,coach:coach||'',conseil:conseil.trim(),regulations:R.regul,noRep:R.norep,versions:R.versions,notes,crit:crit.map(c=>c.slice())});return}
     if(!fini)peindre()});
   function demarrer(){son(1,.01,.001);if(t0==null)t0=Date.now();eveil(true);tick=setInterval(peindre,200);peindre()}
   if(snap){ // reprise : le temps passé tablette en veille ou page fermée est compté
@@ -314,14 +340,16 @@ function lancer(W,opts){
   }
   // départ : un toucher (autorise le son sur iPad), puis décompte 3-2-1
   const iosVeille=!('wakeLock' in navigator);
+  const visL=viseLib();
   v.innerHTML=`<div class="chr prep"><div class="ch-haut"><span>${esc(opts.athlete||'')}</span><span>${esc(opts.titreWod||'')}</span><span>${sansCap?'sans limite':mmss(total-PREP)}</span></div>
     <p class="ch-titre">Prêts ?</p><p class="ch-sous">L’athlète se place. Le partenaire tient la tablette : il valide chaque exercice, compte, note les no rep et l’exécution.</p>
     ${opts.rappel?`<p class="ch-rappel">🔁 Au dernier WOD de ce format, tu as décidé : <b>${esc(opts.rappel)}</b></p>`:''}
+    ${visL?`<div class="ch-vise"><label for="ch-vise">🎯 Je vise ${esc(visL[0])}</label><select id="ch-vise"><option value="">— pas d’objectif —</option>${Array.from({length:+visL[1]+1},(_,x)=>`<option value="${x}"${R.vise===x?' selected':''}>${x}</option>`).join('')}</select><small>${esc(visL[2])}</small></div>`:''}
     ${iosVeille?'<p class="ch-lab">⚠ Cette tablette peut se mettre en veille : garde l’écran allumé (touche-le de temps en temps). Le WOD reprend s’il se coupe.</p>':''}
     <div class="ch-corps"><div class="ch-liste">${ex.map((e,j)=>exoHTML(j,true,W.f==='tabata'?null:W.f==='emom1'?repsE1(j,0):W.f==='fortime'?repsFT(j):e.reps||null)).join('')}</div></div>
     <div class="ch-bas"><button type="button" data-ch2="annuler">Annuler</button><button type="button" data-ch2="son">${libMode()}</button><button type="button" class="ch-ok" data-ch2="go">Départ (3 s)</button></div></div>`;
   v.querySelector('[data-ch2="son"]').onclick=e=>{modeSuivant();e.currentTarget.textContent=libMode()};
-  v.querySelector('[data-ch2="go"]').onclick=demarrer;
+  v.querySelector('[data-ch2="go"]').onclick=()=>{const s=v.querySelector('#ch-vise');R.vise=s&&s.value!==''?+s.value:null;demarrer()};
   v.querySelector('[data-ch2="annuler"]').onclick=()=>{fermer();opts.onAnnule&&opts.onAnnule()};
   return {fermer};
 }

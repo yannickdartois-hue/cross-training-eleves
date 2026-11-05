@@ -189,14 +189,29 @@ function installHTML(){let vu=false;try{vu=localStorage.getItem('ct_install_vu')
   const app=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone;if(app||vu)return '';
   const ios=/iPad|iPhone|Macintosh/.test(navigator.userAgent)&&'ontouchend' in document;
   return `<div class="install"><p>📲 <b>Installe l’appli</b> : plein écran et hors ligne. ${ios?'Touche Partager ⬆️ puis « Sur l’écran d’accueil ».':'Menu ⋮ du navigateur puis « Ajouter à l’écran d’accueil » (ou « Installer »).'}</p><button type="button" class="bt mini" data-act="installok">OK</button></div>`}
+// « Refaire avec ma décision » : copie du WOD fait, ajustée selon la décision notée
+function wodAjuste(P){const W=JSON.parse(JSON.stringify(P));W.id=uid();W.fait=false;['res','fc','rpe','dims','com','regle','coach','conseil','regul','norep','fcRec','vise','realise','pourquoi','alerte','ress','ress5'].forEach(k=>delete W[k]);
+  W.ex.forEach(e=>{delete e.note;delete e.crit});const N=CTL.NIV_REPS,ps=CTL.PRESETS.find(p=>p.id===W.preset)||{};
+  const niv=d=>W.ex.forEach(e=>{if(!e.reps)return;let k=N.indexOf(e.reps);if(k<0)k=N.findIndex(x=>x>=e.reps);if(k<0)k=N.length-1;e.reps=N[Math.max(0,Math.min(N.length-1,k+d))]});
+  if(P.regle==='monte'){if(W.ex.every(e=>(e.v||0)>=1))niv(1);else W.ex.forEach(e=>e.v=Math.min(1,(e.v||0)+1))}
+  else if(P.regle==='baisse'){if(W.ex.every(e=>(e.v||0)<=-1))niv(-1);else W.ex.forEach(e=>e.v=Math.max(-1,(e.v||0)-1))}
+  else if(P.regle==='recup'){if(W.f==='tabata'&&ps.libre)W.p.r=Math.min(60,(W.p.r||10)+10);else if(W.f!=='tabata')niv(-1)}
+  return W}
+// Inaptitude partielle : exercices à écarter
+const RESTR=[['saut','Sauter',m=>/jump|saut|burpee|box|skip|jack|corde|bond|sauté|groupé/i.test(m.id+' '+m.nom)],
+  ['mains','Appui sur les mains',m=>/pompe|planche|burpee|dips|mountain|spider|ours|crabe|gainage|push|bear|plank|grimpeur/i.test(m.id+' '+m.nom)],
+  ['genou','Plier le genou',m=>/squat|fente|chaise|lunge|pistol|thruster|step|montée|genou|wall/i.test(m.id+' '+m.nom)],
+  ['charge','Porter une charge',m=>m.m&&m.m!=='pdc']];
+// Charge de séance : effort perçu × durée en minutes (méthode de Foster), en unités arbitraires
+function chargeSeance(r){return (r.wods||[]).filter(w=>w.fait&&w.rpe).reduce((a,w)=>{const d=w.f==='fortime'&&w.res&&w.res.temps?w.res.temps:CTL.dureeS(w)||0;return a+w.rpe*d/60},0)}
 function carteWod(W,i,mob){
   const sd=W.fait?suiviDecision(elv().id,S.seance,i):null;
   const ex=(W.ex||[]).map(e=>{const m=mvById(e.m)||{nom:e.m};return `<span class="wx">${esc(m.nom)}${boutonVideo(e.m,'mini')}${e.reps&&W.f!=='tabata'?' × '+e.reps+(W.f==='emom1'?' (+1/min)':''):''}${e.v?`<em>${e.v<0?'−':'+'}</em>`:''}${e.kg?` <small>${e.kg} kg</small>`:''}${W.fait&&e.note?` <small>exéc. ${e.note}/${W.ress5||W.rpe||!W.ress?4:5} ${W.ress5||W.rpe||!W.ress?CTL.NOTE4[e.note]||'':''}</small>`:''}${W.fait&&critTxt(e)?` <small class="muted">${critTxt(e)}</small>`:''}</span>`}).join('');
   const sc=W.fait?CTL.score(W):'';
   return `<article class="wod${W.fait?' fait':''}"><header><b>${esc(CTL.titreWod(W))}</b>${W.special?'<span class="pill">spécial</span>':''}<span class="pill">${W.fait?'fait':'prévu'}</span></header>
     <div class="wxs">${ex||'<span class="muted small">aucun exercice</span>'}</div>
-    ${W.fait?`<p class="small">${esc(sc)} · FC ${pastFC(W.fc,mob)} · ressenti ${esc(ressW(W))}${W.regul?' · '+W.regul+' régulation'+(W.regul>1?'s':''):''}${W.norep?' · '+W.norep+' no rep':''}</p>${W.regle?`<p class="small">Décision : <b>${esc(CTL.REGLE[W.regle]||W.regle)}</b>${W.coach?' · coach '+esc(prenom(W.coach)):''}${W.conseil?' : « '+esc(W.conseil)+' »':''}</p>`:''}${W.com?`<p class="small muted">« ${esc(W.com)} »</p>`:''}${sd?`<p class="small ${sd.resultat==='oui'?'ok':sd.resultat==='non'?'avert':'muted'}">Décision d’avant (« ${esc(CTL.REGLE[sd.decision]||sd.decision)} ») : ${sd.resultat==='oui'?'✓ appliquée':sd.resultat==='non'?'✗ pas appliquée':'formats différents, à vérifier toi-même'}</p>`:''}`:''}
-    ${(W.ex||[]).length&&!W.fait?`<button class="bt orange lancer" type="button" data-act="go" data-i="${i}">▶ Lancer le chrono</button>`:''}<div class="rangee">${(W.ex||[]).length&&W.fait?`<button class="bt mini" type="button" data-act="go" data-i="${i}">Refaire</button>`:''}<button class="bt mini" type="button" data-act="wmod" data-i="${i}">Modifier</button><button class="bt mini danger" type="button" data-act="wdel" data-i="${i}">Supprimer</button></div></article>`;
+    ${W.fait?`<p class="small">${esc(sc)} · FC ${pastFC(W.fc,mob)} · ressenti ${esc(ressW(W))}${W.regul?' · '+W.regul+' régulation'+(W.regul>1?'s':''):''}${W.norep?' · '+W.norep+' no rep':''}${W.fcRec&&W.fc?' · récup −'+Math.max(0,W.fc-W.fcRec):''}${W.vise!=null&&W.realise!=null?' · visé '+W.vise+' / réalisé '+W.realise:''}</p>${W.alerte?'<p class="small ko">⚠ Alerte : le professeur doit être prévenu.</p>':''}${W.regle?`<p class="small">Décision : <b>${esc(CTL.REGLE[W.regle]||W.regle)}</b>${W.coach?' · coach '+esc(prenom(W.coach)):''}${W.conseil?' : « '+esc(W.conseil)+' »':''}</p>`:''}${W.com?`<p class="small muted">« ${esc(W.com)} »</p>`:''}${sd?`<p class="small ${sd.resultat==='oui'?'ok':sd.resultat==='non'?'avert':'muted'}">Décision d’avant (« ${esc(CTL.REGLE[sd.decision]||sd.decision)} ») : ${sd.resultat==='oui'?'✓ appliquée':sd.resultat==='non'?'✗ pas appliquée':'formats différents, à vérifier toi-même'}</p>`:''}`:''}
+    ${(W.ex||[]).length&&!W.fait?`<button class="bt orange lancer" type="button" data-act="go" data-i="${i}">▶ Lancer le chrono</button>`:''}<div class="rangee">${W.fait&&W.regle?`<button class="bt orange" type="button" data-act="wdec" data-i="${i}">↻ Refaire avec ma décision : ${esc(CTL.REGLE[W.regle]||W.regle)}</button>`:''}${(W.ex||[]).length&&W.fait?`<button class="bt mini" type="button" data-act="go" data-i="${i}">Refaire à l’identique</button>`:''}<button class="bt mini" type="button" data-act="wmod" data-i="${i}">Modifier</button><button class="bt mini danger" type="button" data-act="wdel" data-i="${i}">Supprimer</button></div></article>`;
 }
 function vSeance(){
   const E=elv(),n=S.seance,r=rec(E.id,n),mob=r.mobile||tab(E.id).mobile||'';
@@ -252,7 +267,8 @@ function peindreEditeur(){
   peindreEditeur0();const f1=document.querySelector('#modal .fen');if(f1&&y0)f1.scrollTop=y0}
 function peindreEditeur0(){
   const W=ED.W,ps=CTL.PRESETS.find(p=>p.id===W.preset)||{};
-  const L=MVS().filter(m=>!ED.zone||m.z===ED.zone);
+  const RS=(rec(elv().id,S.seance,false)||{}).restr||[];
+  const L=MVS().filter(m=>(!ED.zone||m.z===ED.zone)&&!RESTR.some(([k,,f])=>RS.includes(k)&&f(m)));
   const reps=W.f!=='tabata'&&!(W.f==='fortime'&&W.p.pal);
   const charge=m=>['kb','halt','barre'].includes(m.m);
   const nivActif=W.ex.length&&W.ex.every(e=>e.reps===W.ex[0].reps)?CTL.NIV_REPS.indexOf(W.ex[0].reps):-1;
@@ -275,6 +291,7 @@ function peindreEditeur0(){
       <span class="ver"><button type="button" class="${e.v<0?'on':''}" data-act="ever" data-k="${k}" data-v="-1">−</button><button type="button" class="${!e.v?'on':''}" data-act="ever" data-k="${k}" data-v="0">=</button><button type="button" class="${e.v>0?'on':''}" data-act="ever" data-k="${k}" data-v="1">+</button></span>
       <button type="button" class="x" data-act="edel" data-k="${k}" aria-label="Retirer">✕</button></li>`}).join('')||'<li class="muted small">Touche les exercices ci-dessous pour les ajouter.</li>'}</ol>
     ${W.ex.length?`<div class="rangee"><button type="button" class="bt mini" data-act="eundo">↩ Retirer le dernier exercice ajouté (${esc((mvById(W.ex[W.ex.length-1].m)||{nom:''}).nom)})</button></div>`:''}
+    <div class="rangee restr"><span class="small">Aujourd’hui, je ne peux pas :</span>${RESTR.map(([k,l])=>`<button type="button" class="bt mini ${RS.includes(k)?'noir':''}" data-act="erestr" data-v="${k}">${esc(l)}</button>`).join('')}</div>
     <div class="zones">${[['','Toutes']].concat(Object.keys(ZONES).map(z=>[z,ZONES[z].nom])).map(z=>`<button type="button" class="${ED.zone===z[0]?'on':''}" data-act="ezone" data-v="${z[0]}">${esc(z[1])}</button>`).join('')}</div>
     <div class="mvs">${L.map(m=>`<div class="mvc"><button type="button" class="mvb${pris.has(m.id)?' pris':''}" data-act="eadd" data-v="${m.id}" ${plein||pris.has(m.id)?'disabled':''} aria-disabled="${plein||pris.has(m.id)}">${pris.has(m.id)?'<span class="mv-pris">✓ choisi</span>':''}<span class="mv-v">${mvVisuel(m)}</span><b>${esc(m.nom)}</b>${m.aussi?`<i>${esc(m.aussi)}</i>`:''}<small>${m.z} · N${m.n}${m.m!=='pdc'?' · '+MATERIEL[m.m].court:''}</small></button>${boutonVideo(m.id,'sur-img')}</div>`).join('')}</div>
     <div class="rangee" style="margin-top:12px;justify-content:space-between"><button class="bt" type="button" data-act="fermer">Annuler</button><button class="bt orange" type="button" data-act="esave">Enregistrer le WOD</button></div>`,'large');
@@ -309,12 +326,23 @@ function vJourJ(){
   <section class="carte"><p class="small">Le référentiel demande que le travail du jour J soit <b>préparé à la séance précédente</b> (séance 8) : mobile, WOD, exercices, niveaux, versions − et +, échauffement.</p>
     <p>Mobile : <b>${mob?esc(MOBILES[mob].nom)+' · FC '+MOBILES[mob].fc:'pas encore choisi'}</b></p>
     <ul class="ctrl">${C.map(c=>`<li class="${c[0]?'ok':'ko'}">${c[0]?'✓':'✗'} ${esc(c[1])}</li>`).join('')}</ul>
-    <button class="bt orange" type="button" data-act="versj">Préparer mes WOD du jour J (séance 9)</button></section>
+    <button class="bt orange" type="button" data-act="versj">Préparer mes WOD du jour J (séance 9)</button>
+    ${W.length?`<div class="rangee" style="margin-top:8px"><button class="bt" type="button" data-act="repet">↻ Répétition générale : copier ces WOD dans la séance 8</button><button class="bt" type="button" data-act="fiche">🖨 Imprimer ma fiche d’épreuve</button></div>`:''}</section>
   <section class="carte"><h3>Répartition des points AFL2 / AFL3</h3><p class="small muted">AFL2 : mon carnet d’entraînement. AFL3 : mes rôles pour mon binôme.</p>
     <div class="rangee">${['6/2','4/4','2/6'].map(x=>`<button type="button" class="bt ${J.rep===x?'noir':''}" data-act="rep" data-v="${x}">${x}</button>`).join('')}</div></section>
   <section class="carte"><h3>Mon échauffement (4 étapes)</h3>${['Température (3 min)','Articulations (3 min)','Activation des muscles de mes WOD (3 min)','AMRAP en relais de 3 min avec mon binôme'].map((t,i)=>`<label class="ch" for="j-e${i}">${i+1}. ${t}</label><input id="j-e${i}" type="text" data-j="${i}" value="${esc(J.ech[i]||'')}">`).join('')}</section>`;
 }
 
+// Fiche d'épreuve imprimable (pour le jury et pour l'élève)
+function imprimerFiche(){const E=elv(),J=jj(E.id),mob=mobileDe(E.id,9),T=tab(E.id),r9=rec(E.id,9,false),W=r9?r9.wods:[],C=CTL.controleEpreuve(W,mob,MOUV);
+  let a=$('#print-area');if(!a){a=document.createElement('div');a.id='print-area';document.body.appendChild(a)}const z=document.createElement('div');z.id='fiche-imp';
+  z.innerHTML=`<h1>Cross training · fiche d’épreuve</h1><p><b>${esc(E.nom)}</b> · ${esc(S.classe||'')} · ${new Date().toLocaleDateString('fr-FR')}</p>
+    <p>Mobile : <b>${mob?esc(MOBILES[mob].nom)+' · FC visée '+MOBILES[mob].fc:'non choisi'}</b>${T.pourquoi?' · pourquoi : '+esc(T.pourquoi):''}</p>
+    <p>Répartition AFL2 / AFL3 : <b>${esc(J.rep||'non choisie')}</b></p>
+    <h2>Échauffement</h2><ol>${['Température','Articulations','Activation','AMRAP en relais'].map((t,i)=>`<li><b>${t}</b> : ${esc(J.ech[i]||'')}</li>`).join('')}</ol>
+    <h2>WOD du jour J</h2>${W.map(w=>`<h3>${esc(CTL.titreWod(w))}</h3><table><tr><th>Exercice</th><th>Zone · niveau</th><th>Répétitions</th><th>Version</th><th>Charge</th></tr>${(w.ex||[]).map(e=>{const m=mvById(e.m)||{nom:e.m};return `<tr><td>${esc(m.nom)}</td><td>${m.z||''} · N${m.n||''}</td><td>${w.f==='tabata'?'max':e.reps||''}</td><td>${e.v<0?'−':e.v>0?'+':'='}</td><td>${e.kg?e.kg+' kg':''}</td></tr>`}).join('')}</table>`).join('')||'<p>Aucun WOD préparé.</p>'}
+    <h2>Vérification du référentiel</h2><ul>${C.map(c=>`<li>${c[0]?'✓':'✗'} ${esc(c[1])}</li>`).join('')}</ul>`;
+  a.innerHTML='';a.appendChild(z);setTimeout(()=>window.print(),60)}
 /* ----- Progrès ----- */
 function vProgres(){
   const E=elv(),T=tab(E.id);
@@ -325,6 +353,10 @@ function vProgres(){
   return `<h2>Mes progrès · ${esc(prenom(E.nom))}</h2><div class="defile"><table class="prog"><tr><th></th><th>WOD</th><th>Résultat</th><th>FC</th><th>Effort / ressenti</th></tr>${lignes}</table></div>
     <p class="small muted">FC : ✓ dans la fourchette de ton mobile, ↓ en dessous, ↑ au-dessus.</p>
     ${graphesProgres(E)}
+    <section class="carte"><h3>Ma charge de séance</h3>${(()=>{const L=[...Array(NB_SEANCES)].map((_,k)=>{const r=rec(E.id,k+1,false),c=r?Math.round(chargeSeance(r)):0;return ['S'+(k+1),c,c+' UA']});
+      return L.some(x=>x[1])?barres(L)+'<p class="small muted">Charge = effort perçu (1 à 10) × durée du WOD en minutes, additionnée sur la séance (unités arbitraires, méthode de Foster). Elle doit monter progressivement, sans à-coups.</p>':'<p class="muted small">Elle apparaît dès qu’un WOD a un effort perçu.</p>'})()}</section>
+    <section class="carte"><h3>Ma récupération</h3>${(()=>{const L=[...Array(NB_SEANCES)].map((_,k)=>{const r=rec(E.id,k+1,false),D=r?r.wods.filter(w=>w.fait&&w.fc&&w.fcRec).map(w=>w.fc-w.fcRec):[];const m=D.length?Math.round(D.reduce((a,b)=>a+b,0)/D.length):0;return ['S'+(k+1),m,'−'+m]});
+      return L.some(x=>x[1])?barres(L)+'<p class="small muted">Baisse de ta FC 1 minute après l’effort (moyenne de la séance). Plus elle est grande, mieux tu récupères : c’est un signe de progrès.</p>':'<p class="muted small">Prends ta FC de récupération en fin de WOD (1 min après) pour voir cette courbe.</p>'})()}</section>
     ${estG()?`<section class="carte"><h3>Mes étoiles</h3><div class="etoiles">${et.map((v,i)=>`<div><b>SCE ${i+1} · S${[2,5,8][i]}</b>${v?svgEtoile(v.map(x=>Math.max(x,0.05))):'<p class="muted small">pas encore</p>'}</div>`).join('')}</div></section>`:''}`;
 }
 
@@ -361,7 +393,7 @@ function exportEleve(E,n){
     wods:r.wods.map(W=>({format:W.f,p:W.p,ordre:W.ordre||'v',special:!!W.special,preset:W.preset||'',titre:CTL.titreWod(W),
       exercices:(W.ex||[]).map(e=>{const m=mvById(e.m)||{};return {id:e.m,nom:m.nom||e.m,zone:m.z||'',niveau:m.n||null,version:e.v||0,reps:e.reps||0,charge:e.kg||null,noteExecution:e.note||null,criteres:e.crit?{placement:e.crit[0],respiration:e.crit[1],amplitude:e.crit[2]}:null}}),
       fait:!!W.fait,res:W.res||null,fc:W.fc||null,ressenti:W.rpe||W.ress5||W.ress||null,echelleRessenti:W.rpe?10:W.ress5?5:W.ress?4:0,echelleNote:W.rpe||W.ress5||!W.ress?4:5,commentaire:W.com||'',
-      dimensions:W.dims||null,regulation:W.regle||'',suiviDecision:W.fait?suiviDecision(E.id,n,r.wods.indexOf(W)):null,coach:W.coach||'',conseil:W.conseil||'',regulations:W.regul||0,noRep:W.norep||0,score:W.fait?CTL.score(W):''})),
+      dimensions:W.dims||null,regulation:W.regle||'',suiviDecision:W.fait?suiviDecision(E.id,n,r.wods.indexOf(W)):null,coach:W.coach||'',conseil:W.conseil||'',regulations:W.regul||0,noRep:W.norep||0,score:W.fait?CTL.score(W):'',fcRecup:W.fcRec||null,vise:W.vise!=null?W.vise:null,realise:W.realise!=null?W.realise:null,ecartRessenti:W.pourquoi||'',alerte:!!W.alerte})),
     etoile:r.etoile?{conception:(r.etoile.conc||[]).length,production:(r.etoile.prod||[]).length,analyse:(r.etoile.ana||[]).length,criteres:r.etoile}:null,
     preuvesRoles:preuvesRoles(E,n),saisie:complet()?'complete':'legere',
     ressentiSeance:r.rs&&(r.rs.etoiles||r.rs.fatigue)?{etoiles:r.rs.etoiles||null,fatigue:r.rs.fatigue||null}:null,
@@ -454,9 +486,9 @@ function lancerWod(i,reprise){
   const E=elv(),n=S.seance,r=rec(E.id,n),W=r.wods[i];if(!W.id)W.id=uid();
   const autres=S.eleves.filter(x=>x.id!==E.id).map(x=>x.nom),mob=mobileDe(E.id,n);
   CHRONO.lancer(W,{athlete:E.nom,titreWod:CTL.titreWod(W),mv:mvById,visuel:mvVisuel,reprise:reprise||null,
-    complet:complet(),coachs:autres,coach:W.coach||autres[0]||'',rappel:(w=>w?CTL.REGLE[w.regle]||'':'')(wodDecisionAvant(E.id,n,i)),fourchette:CTL.FOURCHETTE[mob]||null,
+    complet:complet(),coachs:autres,coach:W.coach||autres[0]||'',rappel:(w=>w?CTL.REGLE[w.regle]||'':'')(wodDecisionAvant(E.id,n,i)),rpeAvant:(r.wods.slice(0,i).filter(w=>w.fait).pop()||{}).rpe||null,fourchette:CTL.FOURCHETTE[mob]||null,
     onEtat(e){enCours(e?{g:ACTIF,el:E.id,n,w:W.id,e}:null)},
-    onFin(x){W.fait=true;W.res=x.res;W.fc=x.fc;W.rpe=x.rpe;W.dims=x.dims||null;W.com=x.commentaire||'';W.regle=x.regle;W.coach=x.coach;W.conseil=x.conseil;delete W.ress;delete W.ress5;W.regul=x.regulations;W.norep=x.noRep;
+    onFin(x){W.fait=true;W.res=x.res;W.fc=x.fc;W.rpe=x.rpe;W.dims=x.dims||null;W.com=x.commentaire||'';W.regle=x.regle;W.coach=x.coach;W.conseil=x.conseil;delete W.ress;delete W.ress5;W.regul=x.regulations;W.norep=x.noRep;W.fcRec=x.fcRec||null;W.vise=x.vise;W.realise=x.realise;W.pourquoi=x.pourquoi||'';W.alerte=!!x.alerte;
       W.ex.forEach((e,k)=>{e.v=x.versions[k];if(x.notes&&x.notes[k])e.note=x.notes[k];else delete e.note;if(x.crit&&x.crit[k]&&x.crit[k].some(c=>c!=null))e.crit=x.crit[k];else delete e.crit});
       touche(r);sauver();rendre();const mob=mobileDe(E.id,n),d=CTL.fcDans(x.fc,mob);
       toast(x.fc&&d!=null?(d===0?'FC dans la fourchette de ton mobile.':d<0?'FC sous la fourchette : monte d’un niveau ou d’une version.':'FC au-dessus : version − ou récupération plus longue.'):'WOD enregistré.');
@@ -520,6 +552,7 @@ document.addEventListener('click',async ev=>{
     case 'effacerOui':delete ROOT.groupes[ACTIF];S=null;ACTIF=null;CLEF=null;ecrireRoot();fermer();rendre();return;
     /* WOD */
     case 'wadd':ouvrirEditeur(-1);return;
+    case 'wdec':{const r=rec(E.id,n),P=r.wods[+b.dataset.i];if(!P)return;ED={i:-1,W:wodAjuste(P),zone:''};peindreEditeur();toast('WOD préparé avec ta décision : vérifie-le puis enregistre.');return}
     case 'wmod':ouvrirEditeur(+b.dataset.i);return;
     case 'wdel':{const r=rec(E.id,n),W=r.wods[+b.dataset.i];
       fen(`<h3>Supprimer ce WOD ?</h3><p>${esc(CTL.titreWod(W))}${W.fait?' (déjà fait : son résultat sera perdu)':''}</p><div class="rangee" style="justify-content:space-between"><button class="bt" type="button" data-act="fermer">Annuler</button><button class="bt danger" type="button" data-act="wdelOui" data-i="${b.dataset.i}">Supprimer</button></div>`);return}
@@ -541,6 +574,7 @@ document.addEventListener('click',async ev=>{
     case 'ecap':ED.W.p.cap=+v;peindreEditeur();return;
     case 'eadd':{if(ED.W.ex.some(e=>e.m===v)){toast('Exercice déjà dans le WOD.');return}
       const mx=CTL.maxExercices(ED.W);if(ED.W.ex.length>=mx){toast('Maximum '+mx+' exercice'+(mx>1?'s':'')+' pour ce format.');return}const lib=ED.W.f==='tabata'||(ED.W.f==='fortime'&&ED.W.p.pal);ED.W.ex.push({m:v,v:0,reps:lib?0:ED.W.niv!=null?CTL.NIV_REPS[ED.W.niv]:ED.W.f==='emom1'?(ED.W.p.dep||6):ED.W.f==='emom'?7:10});chargeParDefaut(ED.W.ex[ED.W.ex.length-1],E);peindreEditeur();const l=document.querySelector('.ed-liste');if(l)l.scrollIntoView({block:'nearest'});return}
+    case 'erestr':{const r=rec(E.id,n);r.restr=r.restr||[];r.restr=r.restr.includes(v)?r.restr.filter(x=>x!==v):r.restr.concat(v);touche(r);sauver();peindreEditeur();return}
     case 'eundo':ED.W.ex.pop();peindreEditeur();return;
     case 'edel':ED.W.ex.splice(+b.dataset.k,1);peindreEditeur();return;
     case 'ever':ED.W.ex[+b.dataset.k].v=+v;peindreEditeur();return;
@@ -548,6 +582,9 @@ document.addEventListener('click',async ev=>{
       {const mx=CTL.maxExercices(ED.W);if(ED.W.ex.length>mx){toast('Trop d’exercices : '+mx+' au maximum pour ce format.');return}}
       const r=rec(E.id,n);if(ED.i>=0){const old=r.wods[ED.i];if(old.fait&&JSON.stringify(old.ex.map(e=>e.m))!==JSON.stringify(ED.W.ex.map(e=>e.m)))ED.W.fait=false;r.wods[ED.i]=ED.W}else r.wods.push(ED.W);
       touche(r);fermer();toast('WOD enregistré.');break}
+    case 'repet':{const r9=rec(E.id,9,false);if(!r9||!r9.wods.length){toast('Prépare d’abord tes WOD du jour J.');return}const r8=rec(E.id,8);
+      r9.wods.forEach(w=>{const c=wodAjuste(Object.assign({},w,{regle:'garde'}));r8.wods.push(c)});touche(r8);S.seance=8;S.tab='seance';toast('WOD du jour J copiés dans la séance 8 : lance-les comme le jour de l’épreuve.');break}
+    case 'fiche':imprimerFiche();return;
     case 'rep':jj(E.id).rep=v;modif(9);modif(8);break;
     case 'rset':{const r=rec(E.id,n);r.rs=Object.assign(r.rs||{},{etoiles:+v});touche(r);break}
     case 'rsfa':{const r=rec(E.id,n);r.rs=Object.assign(r.rs||{},{fatigue:+v});touche(r);break}
