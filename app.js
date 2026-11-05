@@ -184,6 +184,11 @@ const ressW=W=>W.rpe?CTL.ressentiTxt(W.rpe,10):W.ress5?CTL.ressentiTxt(W.ress5,5
 const complet=()=>{const r=S&&S.classe&&ROOT.classes&&ROOT.classes[S.classe];return ((r&&r.s)||cfg().s||'l')==='c'}; // saisie complète (réglée par le professeur ; le dernier QR de la classe scanné sur la tablette fait foi)
 const critTxt=e=>e.crit&&e.crit.some(x=>x===0||x===1)?CT_CRIT.map((c,k)=>(e.crit[k]===1?'✓':e.crit[k]===0?'✗':'?')+c.slice(0,4)+'.').join(' '):'';
 const pastFC=(fc,mob)=>{const d=CTL.fcDans(fc,mob);return fc?`<span class="fc ${d==null?'':d===0?'dans':d<0?'sous':'dessus'}">${fc}${d==null?'':d===0?' ✓':d<0?' ↓':' ↑'}</span>`:'<span class="muted">—</span>'};
+// Conseil d'installation (plein écran, meilleur hors ligne) : affiché tant que l'appli tourne dans le navigateur
+function installHTML(){let vu=false;try{vu=localStorage.getItem('ct_install_vu')==='1'}catch(e){}
+  const app=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone;if(app||vu)return '';
+  const ios=/iPad|iPhone|Macintosh/.test(navigator.userAgent)&&'ontouchend' in document;
+  return `<div class="install"><p>📲 <b>Installe l’appli</b> : plein écran et hors ligne. ${ios?'Touche Partager ⬆️ puis « Sur l’écran d’accueil ».':'Menu ⋮ du navigateur puis « Ajouter à l’écran d’accueil » (ou « Installer »).'}</p><button type="button" class="bt mini" data-act="installok">OK</button></div>`}
 function carteWod(W,i,mob){
   const sd=W.fait?suiviDecision(elv().id,S.seance,i):null;
   const ex=(W.ex||[]).map(e=>{const m=mvById(e.m)||{nom:e.m};return `<span class="wx">${esc(m.nom)}${boutonVideo(e.m,'mini')}${e.reps&&W.f!=='tabata'?' × '+e.reps+(W.f==='emom1'?' (+1/min)':''):''}${e.v?`<em>${e.v<0?'−':'+'}</em>`:''}${e.kg?` <small>${e.kg} kg</small>`:''}${W.fait&&e.note?` <small>exéc. ${e.note}/${W.ress5||W.rpe||!W.ress?4:5} ${W.ress5||W.rpe||!W.ress?CTL.NOTE4[e.note]||'':''}</small>`:''}${W.fait&&critTxt(e)?` <small class="muted">${critTxt(e)}</small>`:''}</span>`}).join('');
@@ -196,7 +201,7 @@ function carteWod(W,i,mob){
 function vSeance(){
   const E=elv(),n=S.seance,r=rec(E.id,n),mob=r.mobile||tab(E.id).mobile||'';
   const sce=estG()&&(SCE[pk()]||[]).includes(n);
-  let h=programme(n);
+  let h=installHTML()+programme(n);
   h+=`<section class="carte"><label class="coche disp"><input type="checkbox" data-ch="disp" ${r.disp?'checked':''}> Aujourd’hui je suis dispensé(e) : je suis assistant et juge de mon binôme</label>
     <label class="ch" for="mob">Mon mobile</label><select id="mob" data-ch="mobile"><option value="">— pas encore choisi —</option>${Object.entries(MOBILES).filter(([k])=>k==='mod'||k==='elev').map(([k,M])=>`<option value="${k}"${mob===k?' selected':''}>${esc(M.nom)} · FC ${M.fc}</option>`).join('')}</select>
     ${mob?`<p class="small muted">${esc(MOBILES[mob].wod)}</p>`:''}</section>`;
@@ -504,6 +509,7 @@ document.addEventListener('click',async ev=>{
     case 'groupe':S.tab='groupe';break;
     case 'seance':S.seance=+v;QRS=null;S.jours=S.jours||{};S.jours[today()]=S.seance;break;
     case 'qui':S.cur=+v;break;
+    case 'installok':try{localStorage.setItem('ct_install_vu','1')}catch(e){}break;
     case 'qrclasse':TTQR.scanner(async t=>recevoirClasse(await TTQR.decoder(t)),{titre:'QR de la classe',aide:'Scanne le QR affiché par le professeur.'});return;
     case 'gvalider':{const L=[];
       for(let i=0;i<3;i++){const inp=$('#g-e'+i),nom=(inp.value||'').trim().replace(/\s+/g,' ');if(nom)L.push({id:inp.dataset.id||uid(),nom})}

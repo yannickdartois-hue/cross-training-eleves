@@ -69,9 +69,9 @@ function lancer(W,opts){
   const kg=i=>ex[i]&&ex[i].kg?' · '+ex[i].kg+' kg':'';
   const verLib=x=>x<0?'version −':x>0?'version +':'version normale';
   const video=e=>window.aVideo&&aVideo(e.m);
-  function exoHTML(i,petit,reps){const e=ex[i],m=exo(i);if(!m)return '';
+  function exoHTML(i,petit,reps,sansReg){const e=ex[i],m=exo(i);if(!m)return '';
     return `<div class="ch-exo${petit?' petit':''}"><div class="ch-img"${video(e)?` data-video="${e.m}" title="Voir la vidéo"`:''}>${opts.visuel(m)}${video(e)?'<span class="bt-video mini" aria-hidden="true">▶</span>':''}</div><div><b>${esc(m.nom)}</b>${reps!=null?`<span class="ch-reps">${reps}<small> rép.${kg(i)}</small></span>`:kg(i)?`<span>${kg(i).slice(3)}</span>`:''}<span class="ch-ver">${verLib(R.versions[i])}</span>
-      <div class="ch-reg"><button type="button" data-ch="moins" data-i="${i}" aria-label="Version plus facile">−</button><button type="button" data-ch="plusv" data-i="${i}" aria-label="Version plus difficile">+</button></div></div></div>`}
+      ${sansReg?'':`<div class="ch-reg"><button type="button" data-ch="moins" data-i="${i}" aria-label="Version plus facile">−</button><button type="button" data-ch="plusv" data-i="${i}" aria-label="Version plus difficile">+</button></div>`}</div></div>`}
   const avenir=(j,txt)=>`<p class="ch-avenir">→ ${txt||'À venir'} : <b>${nomEx(j)}</b></p>`;
   const zone=r=>r>20?'z1':r>10?'z2':'z3'; // couleur de la minute : > 20 s, 10 à 20 s, < 10 s
   // saisie complète seulement : les critères sont demandés au partenaire après chaque exercice validé
@@ -100,8 +100,14 @@ function lancer(W,opts){
     }
     let couleur='prep',titre='Prêt ?',corps='',grand=mmss(o.reste),sous='';
     if(typ==='prep'){titre='Prêt ?';grand=String(Math.ceil(o.reste));const e0=W.f==='tabata'?exoDuRound(0):0;corps=exoHTML(e0,false,null);sous=esc(opts.titreWod||'');}
-    else if(typ==='eff'){couleur='eff';titre='EFFORT';sous='Round '+(i+1)+' / '+p.n;const k=exoDuRound(i);corps=exoHTML(k,false,null)+compteur(R.rounds[i]||0,'rép. ce round');}
-    else if(typ==='rep'){couleur='rep';titre='REPOS';const k=exoDuRound(i+1);sous='Round '+(i+1)+' : '+(R.rounds[i]||0)+' rép.';corps=(k!==exoDuRound(i)?avenir(k,'À venir'):'<p class="ch-avenir">Même exercice au prochain round</p>')+exoHTML(k,true,null);}
+    else if(typ==='eff'){couleur='eff';titre='EFFORT';sous='Round '+(i+1)+' / '+p.n;const k=exoDuRound(i);
+      const av=R.rounds.slice(0,i).filter(x=>x!=null),pre=i>0?R.rounds[i-1]:null,pl=av.length?Math.min(...av):null;
+      const k2=i+1<p.n?exoDuRound(i+1):null;
+      corps=exoHTML(k,false,null,true)+compteur(R.rounds[i]||0,'rép. ce round')
+        +(i>0?`<p class="ch-repere">Round précédent : <b>${pre==null?'non compté':pre}</b>${pl!=null?' · ton plancher : <b>'+pl+'</b>':''}</p>`:'')
+        +(k2!=null&&k2!==k?`<p class="ch-avenir">Ensuite : <b>${nomEx(k2)}</b></p>`:'');}
+    else if(typ==='rep'){couleur='rep';titre='REPOS';const k=exoDuRound(i+1);sous='Round '+(i+1)+' : '+(R.rounds[i]==null?'non compté':R.rounds[i]+' rép.');
+      if(R.rounds[i]==null)corps=`<div class="ch-rattrape"><b>Round ${i+1} non compté</b><span>Combien de répétitions ?</span><div class="fin-ligne"><select id="ch-rc" aria-label="Répétitions du round ${i+1}">${Array.from({length:41},(_,x)=>`<option value="${x}">${x}</option>`).join('')}</select><button type="button" class="ch-moyen" data-ch="rcok" data-i="${i}">Valider</button></div></div>`;else corps='';corps+=(k!==exoDuRound(i)?avenir(k,'À venir'):'<p class="ch-avenir">Même exercice au prochain round</p>')+exoHTML(k,true,null);}
     else if(typ==='min'&&SEQ){const M=R.minutes[i];couleur=M?'rep':zone(o.reste);titre='Minute '+(i+1)+' / '+p.min;
       sous=ex.map((e,j)=>repsE1(j,i)+' '+nomEx(j)).join(' · ');
       if(M&&M.ok)corps=`<div class="ch-bilan-min"><b>✓ Séquence terminée</b><span>${M.t} s d’effort · ${M.repos} s de repos</span></div>`;
@@ -156,11 +162,13 @@ function lancer(W,opts){
         <div class="ch-boutons"><button type="button" class="ch-moyen" data-ch="partann">← Annuler</button><button type="button" class="ch-gros ch-ko" data-ch="partok">Confirmer</button></div></div>`;
 
   /* ---------- Bilan détaillé (comme les bilans de l'appli d'origine) ---------- */
-  const barres=(L,lab,col)=>{const mx=Math.max(1,...L);return `<div class="ch-barres">${L.map((x,k)=>`<div><small>${x}</small><i style="height:${Math.max(4,Math.round(x/mx*70))}px;background:${col(x,k)}"></i><small>${lab(k)}</small></div>`).join('')}</div>`};
+  const barres=(L,lab,col,txt)=>{const mx=Math.max(1,...L);return `<div class="ch-barres">${L.map((x,k)=>`<div><small>${txt&&txt(k)!=null?txt(k):x}</small><i style="height:${Math.max(4,Math.round(x/mx*70))}px;background:${col(x,k)}"></i><small>${lab(k)}</small></div>`).join('')}</div>`};
   function bilanHTML(){
     const sumReps=k=>ex.slice(0,k).reduce((a,e)=>a+(+e.reps||0),0);
-    if(W.f==='tabata'){const L=R.rounds.map(x=>x||0);if(!L.length)return '';const mn=Math.min(...L),mx=Math.max(...L),tot=L.reduce((a,b)=>a+b,0);
-      return `<div class="ch-bil"><p><b>Score plancher : ${mn} rép.</b> · total ${tot} rép.</p>${barres(L,k=>'C'+(k+1),x=>x===mn?'#fca5a5':x===mx?'#86efac':'#fed7aa')}<p class="ch-lab">Plancher = le round le plus faible (rouge). Vert = le meilleur.</p></div>`}
+    if(W.f==='tabata'){const L=R.rounds.map(x=>x==null?null:x);if(!L.length)return '';const C=L.filter(x=>x!=null),nc=L.length-C.length;
+      if(!C.length)return `<div class="ch-bil"><p><b>Aucun round compté</b> : pas de score pour ce Tabata.</p></div>`;
+      const mn=Math.min(...C),mx=Math.max(...C),tot=C.reduce((a,b)=>a+b,0);
+      return `<div class="ch-bil"><p><b>Score plancher : ${mn} rép.</b> · total ${tot} rép.</p>${barres(L.map(x=>x||0),k=>'C'+(k+1),(x,k)=>L[k]==null?'#cbd5e1':x===mn?'#fca5a5':x===mx?'#86efac':'#fed7aa',k=>L[k]==null?'–':null)}<p class="ch-legende">Rouge = le round le plus faible (plancher) · vert = le meilleur${nc?` · gris = non compté (${nc}), hors du score`:''}</p></div>`}
     if(W.f==='amrap'){const T=R.tourT.map((x,k)=>Math.round(x-(k?R.tourT[k-1]:0)));const tot=R.tours*sumReps(N)+sumReps(R.amIdx);
       let h=`<div class="ch-bil"><p><b>${R.tours} tour${R.tours>1?'s':''} complet${R.tours>1?'s':''}</b>${R.amIdx?' + '+R.amIdx+'/'+ex.length+' exercice'+(R.amIdx>1?'s':''):''} · ${tot} rép. au total</p>`;
       if(T.length){const moy=Math.round(T.reduce((a,b)=>a+b,0)/T.length);h+=`<p>Temps moyen par tour : <b>${moy} s</b> · meilleur ${Math.min(...T)} s · moins bon ${Math.max(...T)} s</p>`;
@@ -179,10 +187,10 @@ function lancer(W,opts){
     if(W.f==='fortime'){R.tours=R.ftPal;if(R.temps==null){if(p.pal&&!p.cap)R.arrete=Math.round(te);else R.temps=Math.round(Math.min(te,(p.pal?p.cap:(p.cap||6))*60))}}
     if(SEQ){const o=ou(Math.min(t,total-.01)),k=o&&o.ph[0]==='min'?o.ph[2]:(t>=total?p.min-1:-1);for(let m=0;m<=k;m++)if(!R.minutes[m])R.minutes[m]={ok:0,stop:m===k?Math.min(R.seq,ex.length-1):0,partiel:m===k&&R.echec?R.echec.n:0,auto:1}}
     if(W.f==='emom')R.minutes.forEach((m,i)=>{if(m&&R.restants[i]==null)R.restants[i]=m.ok?m.repos:0});
-    if(W.f==='tabata'){const fait=Math.min(p.n,Math.ceil(te/(p.e+p.r)));for(let i=0;i<fait;i++)if(R.rounds[i]==null)R.rounds[i]=0}
+    if(W.f==='tabata'){const fait=Math.min(p.n,Math.ceil(te/(p.e+p.r)));for(let i=0;i<fait;i++)if(R.rounds[i]==null)R.rounds[i]=null} // non compté : reste vide, hors du score
     // note proposée = moyenne des notes données pendant le WOD
     // critères proposés : réussis au moins une fois sur deux pendant le WOD
-    ex.forEach((e,j)=>{const L=R.critLog.filter(x=>x.j===j);crit[j]=L.length?[0,1,2].map(k=>L.filter(x=>x.c[k]).length*2>=L.length?1:0):[null,null,null]});
+    ex.forEach((e,j)=>{const L=R.critLog.filter(x=>x.j===j);crit[j]=L.length?[0,1,2].map(k=>L.filter(x=>x.c[k]).length*2>=L.length?1:0):[1,1,1];vu[j]=!!L.length});
     peindreFin();etat(true);
   }
   const fourch=opts.fourchette||null;
@@ -212,7 +220,7 @@ function lancer(W,opts){
     if(r<=0){clearInterval(poulsT);poulsT=null;PL.etat='saisie';son(660,.3,.6);setTimeout(()=>son(660,.3,.6),350);try{navigator.vibrate&&navigator.vibrate([200,100,200])}catch(x){}
       lireChamps();peindreFin();const i=v.querySelector('#ch-batt');if(i)i.focus();return}
     if(t)t.textContent=Math.ceil(r)}
-  const etapes=()=>{const fv=String(fc).trim();return {pouls:!!fv&&+fv>=40&&+fv<=230,exe:ex.every((e,j)=>crit[j].every(x=>x===0||x===1)),effort:!!rpe,decision:!!regle,
+  const etapes=()=>{const fv=String(fc).trim();return {pouls:!!fv&&+fv>=40&&+fv<=230,exe:ex.every((e,j)=>vu[j]),effort:!!rpe,decision:!!regle,
     coach:COMPLET?com.trim().length>=3&&conseil.trim().length>=3:!!(coach||conseil.trim()||com.trim())}};
   function majFin(){const E=etapes();Object.keys(E).forEach(k=>{const el=v.querySelector(`[data-et="${k}"]`);if(el)el.classList.toggle('faite',E[k])});
     const ok=!manque().length,b=v.querySelector('[data-ch="enreg"]'),h=v.querySelector('.ch-indic');if(b)b.disabled=!ok;if(h){h.textContent=ok?'✓ Prêt à enregistrer':'Il manque : '+manque().join(', ');h.classList.toggle('pret',ok)}
@@ -226,7 +234,7 @@ function lancer(W,opts){
         <label for="ch-fc" class="fin-petit">Ma fréquence cardiaque (calculée, ou lue sur une montre)</label><input id="ch-fc" type="number" inputmode="numeric" min="40" max="230" placeholder="ex. 152" value="${fc||''}">
         ${fourch?`<p class="fin-fc ${fcEtat(fc)}">Fourchette de ton mobile : ${fourch[0]} à ${fourch[1]}${fcEtat(fc)?' · '+fcTexte(fc):''}</p>`:''}`)}
       ${bilanHTML()}
-      ${et('exe',2,'L’exécution','le coach touche chaque critère : ✓ réussi, ✗ à revoir'+(R.critLog.length?' · proposé d’après le WOD':''),`<div class="ch-notes">${ex.map((e,j)=>{const n=noteCrit(crit[j]);return `<div class="ch-note"><span>${nomEx(j)}${n?` <small>· ${n}/4 ${esc(NOTES[n-1][1])}</small>`:''}</span><span class="ch-c3">${CRIT.map((c,k)=>`<button type="button" class="${crit[j][k]===1?'ok':crit[j][k]===0?'ko':''}" data-ch="crit" data-i="${j}" data-k="${k}">${crit[j][k]===1?'✓ '+c:crit[j][k]===0?'✗ '+c:c+' ?'}</button>`).join('')}</span></div>`}).join('')}</div>`)}
+      ${et('exe',2,'L’exécution','tout est proposé réussi : le coach touche ce qui est raté, puis « J’ai regardé »'+(R.critLog.length?' · proposé d’après le WOD':''),`<div class="ch-notes">${ex.map((e,j)=>{const n=noteCrit(crit[j]);return `<div class="ch-note${vu[j]?'':' a-voir'}"><span>${nomEx(j)}${n&&vu[j]?` <small>· ${n}/4 ${esc(NOTES[n-1][1])}</small>`:''}</span><span class="ch-c3">${CRIT.map((c,k)=>`<button type="button" class="${crit[j][k]===1?'ok':crit[j][k]===0?'ko':''}" data-ch="crit" data-i="${j}" data-k="${k}">${crit[j][k]===1?'✓ '+c:crit[j][k]===0?'✗ '+c:c+' ?'}</button>`).join('')}${vu[j]?'':`<button type="button" class="vu" data-ch="vu" data-i="${j}">J’ai regardé</button>`}</span></div>`}).join('')}</div>`)}
       ${et('effort',3,'Mon effort','de 1 (très facile) à 10 (maximal) · obligatoire',`<div class="ch-rpe">${RPE.slice(1).map((l,k)=>`<button type="button" class="r${k+1}${rpe===k+1?' on':''}" data-ch="rpe" data-v="${k+1}"><b>${k+1}</b>${l}</button>`).join('')}</div>
         ${COMPLET?`<p class="ch-lab">Où l’as-tu senti ? (1 = rien, 5 = au maximum)</p><div class="ch-dims">${[['mu','Muscles'],['so','Souffle'],['te','Tête']].map(([d,l])=>`<div><span>${l}</span>${[1,2,3,4,5].map(x=>`<button type="button" class="${dims[d]===x?'on':''}" data-ch="dim" data-d="${d}" data-v="${x}">${x}</button>`).join('')}</div>`).join('')}</div>`:''}`)}
       ${et('decision',4,'Ma décision pour le prochain WOD','obligatoire',`${rc?`<p class="fin-conseil">Conseillé d’après ta FC et ton effort : <b>${esc(REGLES.find(x=>x[0]===rc)[1])}</b></p>`:''}
@@ -238,7 +246,7 @@ function lancer(W,opts){
       <div class="fin-pied"><p class="ch-lab ch-indic${pret?' pret':''}">${pret?'✓ Prêt à enregistrer':'Il manque : '+manque().join(', ')}</p>
       <div class="ch-bas"><button type="button" data-ch="annuler" class="${jeter?'confirme':''}">${jeter?'Sûr ? Le WOD sera perdu':'Ne pas enregistrer'}</button><button type="button" class="ch-ok" data-ch="enreg"${pret?'':' disabled'}>Enregistrer</button></div></div></div>`;
   }
-  let ressenti=0,com='',fc='',jeter=false,rpe=0,regle='',conseil='',coach=opts.coach||'';const notes=ex.map(()=>null),crit=ex.map(()=>[null,null,null]),dims={};
+  let ressenti=0,com='',fc='',jeter=false,rpe=0,regle='',conseil='',coach=opts.coach||'';const notes=ex.map(()=>null),crit=ex.map(()=>[null,null,null]),vu=ex.map(()=>false),dims={};
   const lireChamps=()=>{const g=id=>v.querySelector(id);if(g('#ch-com'))com=g('#ch-com').value;if(g('#ch-cons'))conseil=g('#ch-cons').value;if(g('#ch-fc'))fc=g('#ch-fc').value;if(g('#ch-coach'))coach=g('#ch-coach').value};
   function fermer(){clearInterval(tick);clearInterval(poulsT);eveil(false);v.remove();document.documentElement.classList.remove('chrono-ouvert');document.removeEventListener('visibilitychange',vis)}
   const vis=()=>{if(document.visibilityState==='hidden')etat(true)};
@@ -256,6 +264,7 @@ function lancer(W,opts){
     if(a==='plus'&&o&&o.ph[0]==='eff'){const i=o.ph[2];R.rounds[i]=(R.rounds[i]||0)+1;try{navigator.vibrate&&navigator.vibrate(25)}catch(x){}}
     else if(a==='moins1'&&o&&o.ph[0]==='eff'){const i=o.ph[2];R.rounds[i]=Math.max(0,(R.rounds[i]||0)-1)}
     else if(a==='norep')R.norep++;
+    else if(a==='rcok'){const i=+b.dataset.i,se=v.querySelector('#ch-rc');if(se)R.rounds[i]=+se.value}
     else if(a==='moins'||a==='plusv'){const i=+b.dataset.i,nv=Math.max(-1,Math.min(1,R.versions[i]+(a==='moins'?-1:1)));if(nv!==R.versions[i]){R.versions[i]=nv;R.regul++}}
     // EMOM
     else if(a==='fini'&&o&&o.ph[0]==='min'){const i=+b.dataset.i;if(R.minuteFaite<i){R.minuteFaite=i;R.restants[i]=Math.round(o.reste);son(660,.1,.4);demanderNotes(ex.map((_,j)=>j))}}
@@ -284,13 +293,14 @@ function lancer(W,opts){
     else if(a==='poulsre'){lireChamps();PL.etat='';PL.n='';peindreFin();return}
     else if(a==='poulsx'){lireChamps();clearInterval(poulsT);poulsT=null;PL.etat='';peindreFin();return}
     else if(a==='poulsok'){lireChamps();const n=+PL.n;if(n>=10&&n<=58){fc=String(n*4);PL.etat='';PL.n='';jeter=false;peindreFin()}return}
-    else if(a==='crit'){lireChamps();const i=+b.dataset.i,k=+b.dataset.k;crit[i][k]=crit[i][k]===1?0:1;jeter=false;peindreFin();return}
+    else if(a==='crit'){lireChamps();const i=+b.dataset.i,k=+b.dataset.k;crit[i][k]=crit[i][k]===1?0:1;vu[i]=true;jeter=false;peindreFin();return}
+    else if(a==='vu'){lireChamps();vu[+b.dataset.i]=true;peindreFin();return}
     else if(a==='rpe'){lireChamps();rpe=+b.dataset.v;jeter=false;peindreFin();return}
     else if(a==='dim'){lireChamps();dims[b.dataset.d]=+b.dataset.v;peindreFin();return}
     else if(a==='regle'){lireChamps();regle=b.dataset.v;jeter=false;peindreFin();return}
     else if(a==='annuler'&&!jeter){lireChamps();jeter=true;peindreFin();return}
     else if(a==='annuler'){fermer();opts.onEtat&&opts.onEtat(null);opts.onAnnule&&opts.onAnnule();return}
-    else if(a==='enreg'){lireChamps();const fcv=+fc||null;if(manque().length)return;fermer();ex.forEach((e,j)=>notes[j]=noteCrit(crit[j]));
+    else if(a==='enreg'){lireChamps();const fcv=+fc||null;if(manque().length)return;fermer();ex.forEach((e,j)=>{if(!vu[j])crit[j]=[null,null,null];notes[j]=noteCrit(crit[j])});
       const res={rounds:R.rounds,restants:R.restants,tours:R.tours,amIdx:R.amIdx,tourT:R.tourT,splits:R.splits,temps:R.temps,arrete:R.arrete};if(SEQ)res.minutes=R.minutes;
       opts.onEtat&&opts.onEtat(null);
       opts.onFin({res,fc:fcv,rpe,dims:COMPLET&&Object.keys(dims).length?Object.assign({},dims):null,commentaire:com.trim(),regle,coach:coach||'',conseil:conseil.trim(),regulations:R.regul,noRep:R.norep,versions:R.versions,notes,crit:crit.map(c=>c.slice())});return}
