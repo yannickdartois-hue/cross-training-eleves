@@ -346,6 +346,29 @@ html.chrono-ouvert,html.chrono-ouvert body{overflow:hidden}
 .ch-rpe .r1,.ch-rpe .r2{background:#bbf7d0}.ch-rpe .r3,.ch-rpe .r4{background:#d9f99d}.ch-rpe .r5,.ch-rpe .r6{background:#fde68a}.ch-rpe .r7,.ch-rpe .r8{background:#fdba74}.ch-rpe .r9,.ch-rpe .r10{background:#fca5a5}
 .ch-rpe button.on{outline:4px solid #fff;outline-offset:1px;transform:scale(1.04)}
 .ch-dims{display:grid;gap:6px}.ch-dims div{display:flex;align-items:center;gap:4px}.ch-dims span{min-width:80px;font-weight:700}.ch-dims button{min-width:44px;min-height:44px;border-radius:10px;border:2px solid rgba(255,255,255,.7);background:transparent;color:#fff;font-weight:800}.ch-dims button.on{background:#fff;color:#1f2937}
+/* ----- Chrono : plus grand, No rep visible, AMRAP coloré par tour (5 nov.) ----- */
+.ch-haut{font-size:clamp(16px,2.4vw,22px)}.ch-reste{font-weight:800;background:rgba(255,255,255,.2);border-radius:999px;padding:2px 12px;font-size:clamp(18px,3vw,28px)}
+.ch-temps{font-size:clamp(80px,min(24vw,20vh),260px)}
+.ch-corps{justify-content:center;gap:clamp(10px,2vh,24px)}
+.ch-exo{max-width:760px;padding:clamp(10px,1.6vh,18px) clamp(12px,2vw,20px);gap:clamp(12px,2vw,20px)}
+.ch-exo:not(.petit) .ch-img{width:clamp(140px,38vw,360px);height:clamp(105px,min(28vw,24vh),270px)}
+.chr:not(.fin):not(.prep)>.ch-bas{position:sticky;bottom:calc(-1 * max(12px,env(safe-area-inset-bottom)));background:inherit;padding:10px 0 max(12px,env(safe-area-inset-bottom));margin-top:auto}
+.ch-exo:not(.petit) b{font-size:clamp(24px,4vw,40px)}
+.ch-reps{display:block;font:800 clamp(30px,6vw,56px)/1.05 var(--d)!important;opacity:1!important;margin:2px 0}.ch-reps small{font:700 clamp(16px,2.4vw,22px) var(--t)}
+.ch-exo.petit .ch-reps{font-size:clamp(24px,4vw,36px)!important}
+.ch-gros{min-width:clamp(240px,56vw,480px);min-height:clamp(110px,16vh,200px);font-size:clamp(54px,10vw,96px)}
+.ch-gros small{font-size:clamp(16px,2.2vw,22px)}
+.ch-bas .ch-norep{background:#fde68a;border-color:#fde68a;color:#1c2128;min-width:clamp(150px,24vw,220px);min-height:64px;font-size:20px;font-weight:800}
+.ch-bas .ch-norep:disabled{background:transparent;border-color:rgba(255,255,255,.35);color:rgba(255,255,255,.55)}
+.chr.am0{background:#c2410c}.chr.am1{background:#1d4ed8}.chr.am2{background:#6d28d9}.chr.am3{background:#15803d}
+.chr.am1 .ch-gros,.chr.am2 .ch-gros,.chr.am3 .ch-gros{color:#1c2128}
+/* Carte WOD : bouton Lancer bien visible */
+.wod .lancer{display:block;width:100%;min-height:64px;font:800 22px var(--d);margin:10px 0 4px}
+/* Éditeur : répétitions en liste déroulante */
+select.num.reps{min-width:96px;min-height:44px;font-size:17px}
+/* Binôme : fond légèrement teinté selon l'élève qui saisit */
+html[data-qui="0"] body{background:#f6f2ee}html[data-qui="1"] body{background:#edf3fb}
+html[data-qui="1"] .qui button.ici{background:#1d4ed8;border-color:#1d4ed8}
 /* ----- Fin du WOD : thème clair, étapes numérotées (charte v1) ----- */
 .chr.fin{background:#f3f5f8;color:#1c2128;padding-bottom:0}
 .chr.fin .ch-titre{color:#c2410c}.chr.fin .ch-sous{color:#5b6470}

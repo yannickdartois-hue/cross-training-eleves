@@ -62,7 +62,7 @@ function variantes(W,mob){const f=W.f,cur=PRESETS.find(p=>p.id===W.preset)||{};
   const L=ep.concat(ent.filter(Boolean));return L.length>1?L:[]}
 // Réglages repris de l'appli chrono « cross-training-pompidou »
 const NIV_REPS=[4,6,8,10,12]; // N0 à N4 : répétitions par exercice (AMRAP, EMOM) ou au départ (EMOM+1)
-const TABATA_REGLAGES=[[20,10],[30,10],[20,20],[40,20],[10,20],[30,30],[45,15]];
+const TABATA_REGLAGES=[[20,10],[30,10],[20,20],[40,20],[30,30],[45,15]];
 const somme=a=>(a||[]).reduce((x,y)=>x+y,0);
 // Note d'exécution sur 4 et ressenti sur 5 (échelles de l'appli d'origine)
 const NOTE4=['','Insuffisant','À améliorer','Bien','Très bien'];

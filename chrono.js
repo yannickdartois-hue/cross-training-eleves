@@ -70,7 +70,7 @@ function lancer(W,opts){
   const verLib=x=>x<0?'version −':x>0?'version +':'version normale';
   const video=e=>window.aVideo&&aVideo(e.m);
   function exoHTML(i,petit,reps){const e=ex[i],m=exo(i);if(!m)return '';
-    return `<div class="ch-exo${petit?' petit':''}"><div class="ch-img"${video(e)?` data-video="${e.m}" title="Voir la vidéo"`:''}>${opts.visuel(m)}${video(e)?'<span class="bt-video mini" aria-hidden="true">▶</span>':''}</div><div><b>${esc(m.nom)}</b>${reps!=null?`<span>${reps} rép.${kg(i)}</span>`:kg(i)?`<span>${kg(i).slice(3)}</span>`:''}<span class="ch-ver">${verLib(R.versions[i])}</span>
+    return `<div class="ch-exo${petit?' petit':''}"><div class="ch-img"${video(e)?` data-video="${e.m}" title="Voir la vidéo"`:''}>${opts.visuel(m)}${video(e)?'<span class="bt-video mini" aria-hidden="true">▶</span>':''}</div><div><b>${esc(m.nom)}</b>${reps!=null?`<span class="ch-reps">${reps}<small> rép.${kg(i)}</small></span>`:kg(i)?`<span>${kg(i).slice(3)}</span>`:''}<span class="ch-ver">${verLib(R.versions[i])}</span>
       <div class="ch-reg"><button type="button" data-ch="moins" data-i="${i}" aria-label="Version plus facile">−</button><button type="button" data-ch="plusv" data-i="${i}" aria-label="Version plus difficile">+</button></div></div></div>`}
   const avenir=(j,txt)=>`<p class="ch-avenir">→ ${txt||'À venir'} : <b>${nomEx(j)}</b></p>`;
   const zone=r=>r>20?'z1':r>10?'z2':'z3'; // couleur de la minute : > 20 s, 10 à 20 s, < 10 s
@@ -118,7 +118,7 @@ function lancer(W,opts){
       corps=(R.minuteFaite>=i?'':`<button type="button" class="ch-gros ch-fini" data-ch="fini" data-i="${i}">Fini !<small>touche dès que la dernière répétition est faite</small></button>`)+`<div class="ch-liste">${ex.map((e,j)=>exoHTML(j,true,e.reps||null)).join('')}</div>`
         +points(p.min,k=>k<i||R.minuteFaite>=k?(R.restants[k]>0?'ok':'ko'):k===i?'enc':'');
       if(o.reste<=10&&i+1<p.min&&R.minuteFaite>=i)corps=avenir(0,'Minute '+(i+2))+corps;}
-    else if(typ==='amrap'){couleur='eff';titre='AMRAP';const j=R.amIdx;
+    else if(typ==='amrap'){couleur='eff am'+(R.tours%4);titre='AMRAP · tour '+(R.tours+1);const j=R.amIdx;
       sous=R.tours+' tour'+(R.tours>1?'s':'')+' complet'+(R.tours>1?'s':'')+(j?' + '+j+'/'+ex.length+' exercice'+(j>1?'s':''):'');
       corps=`<p class="ch-lab">Exercice ${j+1} / ${ex.length} · tour ${R.tours+1}</p>${exoHTML(j,false,(ex[j]||{}).reps||null)}
         <div class="ch-boutons"><button type="button" class="ch-gros ch-fini" data-ch="amok">✓ Validé</button>${R.tours||j?'<button type="button" class="ch-moyen" data-ch="amundo">↩ Annuler</button>':''}</div>
@@ -140,8 +140,11 @@ function lancer(W,opts){
     const html=`<div class="chr ${couleur}${pauseA?' pause':''}"><div class="ch-haut"><span>${esc(opts.athlete||'')}</span><span>${esc(opts.titreWod||'')}</span><span class="ch-reste"></span></div>
       <p class="ch-titre">${titre}</p><p class="ch-temps"></p><p class="ch-sous">${sous}</p>
       <div class="ch-corps">${corps}</div>
-      <div class="ch-bas"><button type="button" class="ch-norep" data-ch="norep">No rep <b>${R.norep}</b></button><button type="button" data-ch="pause">${pauseA?'Reprendre':'Pause'}</button><button type="button" data-ch="sonmode">${libMode()}</button><button type="button" data-ch="stop" class="${arret?'confirme':''}">${arret?'Sûr ? Retoucher':'Arrêter'}</button></div>${nep}</div>`;
-    if(html!==dernierHtml){const c=v.querySelector('.chr'),y=c?c.scrollTop:0;v.innerHTML=html;dernierHtml=html;const n=v.querySelector('.chr');if(n&&y)n.scrollTop=y}
+      <div class="ch-bas"><button type="button" class="ch-norep" data-ch="norep"${pauseA||typ==='rep'||typ==='prep'?' disabled':''}>No rep <b>${R.norep}</b></button><button type="button" data-ch="pause">${pauseA?'Reprendre':'Pause'}</button><button type="button" data-ch="sonmode">${libMode()}</button><button type="button" data-ch="stop" class="${arret?'confirme':''}">${arret?'Sûr ? Retoucher':'Arrêter'}</button></div>${nep}</div>`;
+    if(html!==dernierHtml){const c=v.querySelector('.chr'),y=c?c.scrollTop:0,av=[...v.querySelectorAll('.ch-img')];v.innerHTML=html;dernierHtml=html;
+      // l'image d'un exercice déjà affichée est remise telle quelle (sinon elle scintille à chaque « +1 »)
+      v.querySelectorAll('.ch-img').forEach((n,k)=>{const o=av.find(x=>x.innerHTML===n.innerHTML);if(o){av.splice(av.indexOf(o),1);n.replaceWith(o)}});
+      const n=v.querySelector('.chr');if(n&&y)n.scrollTop=y}
     v.querySelector('.ch-temps').textContent=grand;v.querySelector('.ch-reste').textContent=sansCap?'':'reste '+mmss(fin);
     etat();
   }
