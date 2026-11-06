@@ -3,6 +3,8 @@
    Lycée Georges Pompidou · une tablette par binôme
    Données gardées sur la tablette uniquement, carnet chiffré par le code du binôme.
    ===================================================================== */
+const AVT=(n,b,c)=>window.EPSAvatar?EPSAvatar(n,b,c):'',AVM=n=>window.EPSAvatar?EPSAvatar.mini(n):'';
+
 'use strict';
 /* Envoi en ligne : lien de dépôt du Nuage (« Demande de fichier – Téléversement seulement »).
    Le lien arrive avec le QR de la classe (outil prof). Celui-ci sert de secours ; vide = pas d'envoi en ligne, le QR suffit. */
@@ -148,7 +150,7 @@ function rendre(){
   $('#onglets').innerHTML=O.map(o=>`<button type="button" data-act="tab" data-v="${o[0]}" class="${S.tab===o[0]?'ici':''}${o[0]==='envoi'&&ne.length?' alerte':''}"><i aria-hidden="true">${o[1]}</i><b>${o[2]}</b></button>`).join('');
   $('#onglets').hidden=!g;
   const V={groupe:vGroupe,seance:vSeance,moi:vMoi,jourj:vJourJ,progres:vProgres,envoi:vEnvoi};
-  $('#main').innerHTML=(g?bandeauReprise():'')+(ne.length&&S.tab!=='envoi'&&S.tab!=='groupe'?`<button type="button" class="nonenvoye" data-act="tab" data-v="envoi">⚠ Séance ${ne.join(', ')} non envoyée au professeur : touche ici pour l’envoyer</button>`:'')+(V[S.tab]||vSeance)();
+  $('#main').innerHTML=(g?bandeauReprise():'')+(ne.length&&S.tab!=='envoi'&&S.tab!=='groupe'?`<button type="button" class="nonenvoye eps-av-ligne" data-act="tab" data-v="envoi">${AVM('envoyer')}<span>⚠ Séance ${ne.join(', ')} non envoyée au professeur : touche ici pour l’envoyer</span></button>`:'')+(V[S.tab]||vSeance)();
 }
 
 /* ----- Binôme ----- */
@@ -217,7 +219,7 @@ function vSeance(){
   const E=elv(),n=S.seance,r=rec(E.id,n),mob=r.mobile||tab(E.id).mobile||'';
   const sce=estG()&&(SCE[pk()]||[]).includes(n);
   let h=installHTML()+programme(n);
-  h+=`<section class="carte"><label class="coche disp"><input type="checkbox" data-ch="disp" ${r.disp?'checked':''}> Aujourd’hui je suis dispensé(e) : je suis assistant et juge de mon binôme</label>
+  h+=`<section class="carte"><label class="coche disp"><input type="checkbox" data-ch="disp" ${r.disp?'checked':''}> Aujourd’hui je suis dispensé(e) : je suis assistant et juge de mon binôme</label>${r.disp?AVT('blesse','Tu es dispensé(e) : aujourd’hui, tu aides et tu juges ton binôme.'):''}
     <label class="ch" for="mob">Mon mobile</label><select id="mob" data-ch="mobile"><option value="">— pas encore choisi —</option>${Object.entries(MOBILES).filter(([k])=>k==='mod'||k==='elev').map(([k,M])=>`<option value="${k}"${mob===k?' selected':''}>${esc(M.nom)} · FC ${M.fc}</option>`).join('')}</select>
     ${mob?`<p class="small muted">${esc(MOBILES[mob].wod)}</p>`:''}</section>`;
   h+=`<h3>Mes WOD ${n===9?'du jour J':''}</h3>${r.wods.map((W,i)=>carteWod(W,i,mob)).join('')||'<p class="muted small">Aucun WOD pour l’instant.</p>'}
@@ -408,7 +410,7 @@ function vEnvoi(){
   const lignes=S.eleves.map((E,k)=>{const o=exportEleve(E,n);const nb=o?o.wods.filter(w=>w.fait).length:0;
     return `<li class="${o?'':'manque'}"><span class="lettre">${LET[k]}</span><span><b>${esc(E.nom)}</b><small>${o?(o.dispense?'dispensé(e) · ':'')+nb+' WOD fait'+(nb>1?'s':'')+(o.bilan?' · bilan écrit':''):'rien de saisi'}</small></span>${o?'<em>✓</em>':''}</li>`}).join('');
   const heure=t=>new Date(t).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-  return `<h2>Fin de séance ${n}</h2><section class="carte"><h3>Ma séance du jour</h3><ul class="envoi">${lignes}</ul></section>
+  return `<h2>Fin de séance ${n}</h2>${(ev.qr||ev.fichier)&&F.length&&!nonEnvoyees().includes(n)?AVT('bravo','Séance envoyée. Bravo, à la prochaine !'):''}<section class="carte"><h3>Ma séance du jour</h3><ul class="envoi">${lignes}</ul></section>
   <div class="gros">
     <button class="bt orange" type="button" data-act="enligne" ${F.length?'':'disabled'}>Envoyer ma séance du jour en ligne</button>${ev.fichier?`<p class="ok small">✓ envoyée à ${heure(ev.fichier)}</p>`:''}
     <button class="bt noir" type="button" data-act="qr" ${F.length?'':'disabled'}>Montrer le QR code</button>${ev.qr?`<p class="ok small">✓ QR montré à ${heure(ev.qr)}</p>`:''}
