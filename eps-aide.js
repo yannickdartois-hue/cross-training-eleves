@@ -4,6 +4,8 @@
    · option « Lecture facilitée » (dyslexie) : Atkinson Hyperlegible partout, lettres et lignes espacées, mémorisée pour
      TOUTES les applis du site (même adresse yannickdartois-hue.github.io).
    Contenu : window.EPS_AIDE = {appli, publics:[{id,titre,chapitres:[{t,html}]}], bouton:true|false, bas:'16px'}
+   · bouton « 📲 Partager l'appli » dans le mode d'emploi (applis élèves, ou EPS_AIDE.partage:true) : QR de l'adresse de l'appli,
+     à scanner par un camarade (il lui faut internet une seule fois). Utilise qrcode.js de l'appli (chargé s'il manque).
    À charger APRÈS le fichier aide.js de l'appli. Ouvrir par code : EPSAide.ouvrir('prof').
    Fichiers à copier avec lui : polices/atkinson-400.woff2, polices/atkinson-700.woff2
    ===================================================================== */
@@ -44,10 +46,24 @@ html.epsa-lisible body p,html.epsa-lisible body li{line-height:1.6}
 .epsa-corps .astuce{background:#f3f5f8;border-left:4px solid var(--acc,#334155);border-radius:8px;padding:8px 12px;margin:8px 0}
 .epsa-corps .attention{background:#fef3c7;border-left:4px solid #d97706;border-radius:8px;padding:8px 12px;margin:8px 0}
 .epsa-corps kbd,.epsa-corps .bouton{display:inline-block;border:1.5px solid #9fb3b0;border-radius:8px;padding:0 6px;font-size:.92em;font-weight:700;background:#fff;white-space:nowrap}
+.epsa-partage{border:0;background:#e8eef5;color:#1c2128;padding:8px 14px;min-height:44px}
+.epsa-qr{display:flex;flex-direction:column;align-items:center;text-align:center;padding:10px 0}.epsa-qr .qr{background:#fff;padding:12px;border-radius:14px;border:1px solid #dde2e8;width:min(320px,80vw)}.epsa-qr .qr svg,.epsa-qr .qr img{width:100%;height:auto;display:block}.epsa-qr .url{font-size:14px;word-break:break-all;color:#5b6470;margin:8px 0}.epsa-qr ol{text-align:left;max-width:520px}
 .epsa-pied{font-size:15px;color:#5b6470;padding:10px 16px;border-top:1px solid #dde2e8}
 :root[data-theme="dark"] .epsa-fen{background:#161b22;color:#e6edf3}:root[data-theme="dark"] .epsa-corps details{background:#0d1117;border-color:#2a313b}:root[data-theme="dark"] .epsa-onglets button{background:#161b22;color:#e6edf3}
 `;
 const st=document.createElement('style');st.textContent=css;document.head.appendChild(st);
+const PARTAGE=A.partage!=null?!!A.partage:/-eleves\/|carnet-step-\//i.test(location.pathname+'/');
+const adresse=()=>location.origin+location.pathname.replace(/index\.html$/,'');
+function chargerQR(){return window.qrcode?Promise.resolve():new Promise((ok,ko)=>{const sc=document.createElement('script');sc.src=base+'qrcode.js';sc.onload=ok;sc.onerror=ko;document.head.appendChild(sc)})}
+function vuePartage(v){const c=v.querySelector('.epsa-corps');v.querySelector('.epsa-onglets').hidden=true;const u=adresse();
+  c.innerHTML=`<div class="epsa-qr"><h3 style="margin:6px 0">📲 Partager l’appli</h3><p style="margin:0 0 8px">Ton camarade scanne ce QR avec l’appareil photo de son téléphone.</p>
+    <div class="qr" aria-label="QR code de l’adresse de l’appli">…</div><div class="url">${u}</div>
+    <ol><li>Il lui faut <b>internet une seule fois</b>, pour ce premier chargement. S’il n’a pas de forfait : active ton <b>partage de connexion</b> le temps de l’installation.</li>
+    <li>L’appli s’ouvre. <b>iPhone</b> : dans <b>Safari</b>, bouton Partager → « Sur l’écran d’accueil ». <b>Android</b> : menu ⋮ de Chrome → « Ajouter à l’écran d’accueil » ou « Installer l’appli ».</li>
+    <li>Ensuite, l’appli marche <b>sans internet</b>. Ses données restent sur son téléphone : rien n’est copié depuis le tien.</li></ol>
+    <button type="button" class="epsa-fermer" data-epsa-retour>← Retour au mode d’emploi</button></div>`;
+  chargerQR().then(()=>{const q=qrcode(0,'M');q.addData(u);q.make();c.querySelector('.qr').innerHTML=q.createSvgTag({cellSize:6,margin:2,scalable:true})})
+    .catch(()=>{c.querySelector('.qr').textContent='QR indisponible hors ligne : recopie l’adresse ci-dessous.'})}
 const appliquer=v=>document.documentElement.classList.toggle('epsa-lisible',!!v);
 appliquer(lire());
 let pub=null;
@@ -64,12 +80,14 @@ function ouvrir(publicId){
   const v=document.createElement('div');v.className='epsa-voile';v.setAttribute('role','dialog');v.setAttribute('aria-modal','true');v.setAttribute('aria-label','Mode d’emploi');
   v.innerHTML=`<div class="epsa-fen"><div class="epsa-tete"><h2>Mode d’emploi<small>${A.appli||''}</small></h2>
     <label class="epsa-lis"><input type="checkbox" ${lire()?'checked':''} data-epsa-lis> Lecture facilitée (dyslexie)</label>
-    <button type="button" class="epsa-fermer" data-epsa-fermer>Fermer</button></div>
+    ${PARTAGE?'<button type="button" class="epsa-partage" data-epsa-partage>📲 Partager l’appli</button>':''}<button type="button" class="epsa-fermer" data-epsa-fermer>Fermer</button></div>
     <div class="epsa-onglets"></div><div class="epsa-corps"></div>
     <div class="epsa-pied">${A.pied||'Les données restent sur l’appareil. Une question, une idée : parlez-en à votre professeur d’EPS.'}<br><span data-epsa-stock></span></div></div>`;
   document.body.appendChild(v);rendre(v);etatStockage(v);
   v.addEventListener('click',e=>{const t=e.target;
     if(t===v||t.closest('[data-epsa-fermer]'))return fermer();
+    if(t.closest('[data-epsa-partage]'))return vuePartage(v);
+    if(t.closest('[data-epsa-retour]')){rendre(v);return}
     const b=t.closest('[data-epsa-pub]');if(b){pub=b.dataset.epsaPub;rendre(v);v.querySelector('.epsa-corps').scrollTop=0}});
   v.querySelector('[data-epsa-lis]').addEventListener('change',e=>{ecrire(e.target.checked);appliquer(e.target.checked)});
   document.addEventListener('keydown',echap);
@@ -90,7 +108,7 @@ async function etatStockage(v){const el=v.querySelector('[data-epsa-stock]');if(
   el.innerHTML=protege===true?'🔒 Données protégées sur cet appareil : le navigateur ne les effacera pas.'
     :protege===false?'⚠ Données non protégées : installez l’appli sur l’écran d’accueil (menu du navigateur → « Ajouter à l’écran d’accueil »), puis rouvrez-la.'
     :'Protection des données non disponible sur ce navigateur : faites des sauvegardes régulières.'}
-window.EPSAide={ouvrir,fermer,lisible:v=>{ecrire(v);appliquer(v)},stockage:()=>pret.then(()=>protege),proteger};
+window.EPSAide={ouvrir,partager:()=>{ouvrir();const v=document.querySelector('.epsa-voile');if(v)vuePartage(v)},fermer,lisible:v=>{ecrire(v);appliquer(v)},stockage:()=>pret.then(()=>protege),proteger};
 function bouton(){if(A.bouton===false||document.querySelector('.epsa-btn'))return;
   const b=document.createElement('button');b.type='button';b.className='epsa-btn';b.textContent='?';b.title='Mode d’emploi';b.setAttribute('aria-label','Mode d’emploi');
   if(A.bas)document.documentElement.style.setProperty('--epsa-bas',A.bas);
