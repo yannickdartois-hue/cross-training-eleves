@@ -100,7 +100,7 @@
     var cle=cleDe(c);if(!cle){if(apres)apres();return}
     var o=ouverture(c),cur=C.seance&&C.seance();
     var info=o?'<p>La séance ouverte aujourd’hui est <b>'+esc(nom(o.s))+'</b> (jusqu’à '+heure(o.fin)+').</p>'+(String(o.s)!==String(cur)?'<p><button type="button" class="eps-code-ok" id="eps-code-aller">Aller à '+esc(nom(o.s))+'</button></p>':''):'';
-    var v=fenetre('<h3>🔑 Code du cours</h3><p>Tape le code à 4 chiffres donné par ton professeur en début de cours. Il ouvre la séance du jour pendant 2 heures.</p>'+info+
+    var v=fenetre('<h3>🔑 Code du cours</h3><p>Tape le code à 4 chiffres donné par ton professeur en début de cours. Il ouvre la séance du jour pendant 2 heures.</p><p style="font-size:14px;color:#475569">Plus rapide : scanne le QR de la classe affiché par ton professeur, la séance s’ouvre toute seule.</p>'+info+
       '<input class="eps-code-saisie" id="eps-code-in" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-label="Code du cours à 4 chiffres">'+
       '<p class="eps-code-err" id="eps-code-err" role="alert"></p>'+
       '<div class="eps-code-bts"><button type="button" class="eps-code-non" id="eps-code-non">Annuler</button><button type="button" class="eps-code-ok" id="eps-code-ok">Ouvrir la séance</button></div>');
@@ -201,6 +201,7 @@
       '<div class="eps-code-grand" id="eps-code-val" aria-live="polite">····</div>'+
       '<p id="eps-code-txt" style="text-align:center;font-weight:700"></p>'+
       '<p style="font-size:14px;color:#475569">À écrire au tableau. Chaque groupe le tape sur son téléphone : la séance s’ouvre pour 2 heures. Valable seulement ce jour-là'+(une?'':' et pour cette séance')+'. Fonctionne sans internet.</p>'+
+      '<p style="font-size:14px;color:#0f6b5c;font-weight:700">Plus rapide : le QR de la classe affiché aujourd’hui ouvre aussi '+(une?'la séance':'cette séance')+' (téléphones à jour). Un seul scan par groupe.</p>'+
       '<div class="eps-code-bts"><span></span><button type="button" class="eps-code-ok" id="eps-code-f">Fermer</button></div>');
     var sel=v.querySelector('#eps-code-s'),dat=v.querySelector('#eps-code-d');
     async function maj(){
@@ -213,5 +214,38 @@
     if(sel)sel.onchange=maj;dat.onchange=maj;v.querySelector('#eps-code-f').onclick=fermerFen;maj();
   }
 
-  window.EPSCode={code:code,nouvelleCle:nouvelleCle,jour:jour,eleve:eleve,memoriserCle:memoriserCle,etat:etat,exiger:exiger,demander:function(){demander()},rafraichir:rafraichir,trace:trace,prof:prof};
+  /* =====================================================================
+     QR DU JOUR (novembre 2026)
+     Le QR de la classe affiché un jour de cours porte aussi la séance
+     ouverte : champ cj = {d:'AAAA-MM-JJ', s:séance, k:code}. Le téléphone
+     qui le scanne vérifie le code avec la clé de la classe et ouvre la
+     séance pendant 2 heures, sans rien taper. Le code au tableau reste
+     valable (téléphones pas à jour, QR non scanné).
+     Prof  : cj:await EPSCode.cjDuJour('gyp',classe,cle,'G')
+             séance = celle choisie aujourd'hui dans « Code du cours »,
+             sinon la séance par défaut (4e paramètre), sinon pas de cj.
+     Élève : EPSCode.appliquerJour(classe,o.cj) dans recevoirClasse().
+     ===================================================================== */
+  async function cjDuJour(app,classe,cle,defaut){
+    try{
+      if(!cle||!classe)return undefined;
+      var m=lire('eps-code-prof:'+(app||'appli'))[classe],s=m&&m.d===jour()?m.s:defaut;
+      if(s==null||s==='')return undefined;
+      var d=jour();return {d:d,s:String(s),k:await code(cle,classe,d,s)};
+    }catch(e){return undefined}
+  }
+  async function appliquerJour(classe,cj){
+    try{
+      if(!cj||!classe||cj.d!==jour())return false;
+      var cle=cleDe(classe);if(!cle)return false;
+      if(await code(cle,classe,cj.d,cj.s)!==String(cj.k))return false;
+      var s=sto();s.ouv=s.ouv||{};var o=s.ouv[classe];
+      if(!(o&&o.d===cj.d&&String(o.s)===String(cj.s)&&Date.now()<o.fin)){s.ouv[classe]={s:String(cj.s),d:cj.d,h:Date.now(),fin:Date.now()+DUREE};ecrire(K,s)}
+      if(C&&C.classe&&C.classe()===classe&&C.ouvrir&&C.seance&&String(C.seance())!==String(cj.s)){try{C.ouvrir(String(cj.s))}catch(e){}}
+      if(C)rafraichir();
+      return true;
+    }catch(e){return false}
+  }
+
+  window.EPSCode={code:code,nouvelleCle:nouvelleCle,jour:jour,eleve:eleve,memoriserCle:memoriserCle,etat:etat,exiger:exiger,demander:function(){demander()},rafraichir:rafraichir,trace:trace,prof:prof,cjDuJour:cjDuJour,appliquerJour:appliquerJour};
 })();

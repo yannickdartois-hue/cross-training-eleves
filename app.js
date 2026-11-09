@@ -462,6 +462,7 @@ function recevoirClasse(o){
   if(o.t!=='C')throw new Error('Ce n’est pas le QR de la classe.');
   const c={classe:o.c,eleves:o.l||[],lien:o.u||'',niv:o.n||'p',dem:o.m||'p',s:o.s||'l'};
   if(window.EPSCode)EPSCode.memoriserCle(o.c,o.cc);
+  if(window.EPSCode&&EPSCode.appliquerJour&&o.cj)EPSCode.appliquerJour(o.c,o.cj); // QR du jour : ouvre la séance sans taper le code
   ROOT.classes[o.c]=c;ecrireRoot();
   if(!S||(S.eleves.length&&S.classe&&S.classe!==o.c)){setTimeout(()=>{if(S)verrouiller().then(rendre);demanderCode('Nouveau binôme · '+o.c,'Choisissez un code secret de 4 chiffres. Retenez-le : il sera demandé à chaque cours.',x=>nouveauGroupe(o.c,x),true)},300);return 'Classe '+o.c+' enregistrée.'}
   S.cfg=JSON.parse(JSON.stringify(c));S.classe=o.c;sauver();rendre();
