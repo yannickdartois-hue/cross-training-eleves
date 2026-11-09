@@ -43,7 +43,7 @@ window.EPS_AIDE={appli:'Cross training · Élève',bouton:false,publics:[
 <li>Un bandeau rouge « Séance non envoyée » reste tant que ce n’est pas fait.</li></ol>`},
 {t:'Code oublié, changer de tablette',html:`<ul><li><b>Code oublié</b> : le carnet ne s’ouvre plus. Supprimez-le et créez un nouveau binôme ; vos séances déjà envoyées sont chez le professeur.</li>
 <li><b>Changer de tablette</b> : Mon binôme → « Enregistrer le carnet », puis « Reprendre un carnet » sur l’autre tablette, et votre code. Le fichier est chiffré : sans le code, personne ne peut le lire.</li>
-<li>Le carnet se verrouille après 10 min sans activité (jamais pendant un chrono).</li></ul>`}]},
+<li>Le carnet se verrouille après 20 min sans activité (jamais pendant un chrono).</li></ul>`}]},
 {id:'prof',titre:'Professeur',chapitres:[
 {t:'Mettre en place',html:`<ol><li>Outil prof (cross-training-prof) → <b>Classes</b> : import Pronote, niveau (1re ou Tle), démarche (progressive ou GAREEPS), lien de dépôt du Nuage (facultatif).</li>
 <li>Premier cours : <b>QR de démarrage</b> affiché, chaque tablette le scanne.</li></ol>`},

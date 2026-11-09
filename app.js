@@ -79,7 +79,7 @@ async function nouveauGroupe(classe,code){
   S.tab='groupe';await enregistrer();
 }
 let tInactif=null;
-function reveil(){clearTimeout(tInactif);if(S)tInactif=setTimeout(async()=>{if(S&&!document.documentElement.classList.contains('chrono-ouvert')){await verrouiller();fermer();rendre();toast('Carnet verrouillé (10 min sans activité).')}},10*60*1000)}
+function reveil(){clearTimeout(tInactif);if(S)tInactif=setTimeout(async()=>{if(S&&!document.documentElement.classList.contains('chrono-ouvert')){await verrouiller();fermer();rendre();toast('Carnet verrouillé (20 min sans activité).')}},20*60*1000)}
 ['click','input','touchstart'].forEach(e=>document.addEventListener(e,reveil,{passive:true}));
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&S)enregistrer()});
 let CODE_CB=null;
