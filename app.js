@@ -79,7 +79,9 @@ async function nouveauGroupe(classe,code){
   S.tab='groupe';await enregistrer();
 }
 let tInactif=null;
-function reveil(){clearTimeout(tInactif);if(S)tInactif=setTimeout(async()=>{if(S&&!document.documentElement.classList.contains('chrono-ouvert')){await verrouiller();fermer();rendre();toast('Carnet verrouillé (20 min sans activité).')}},20*60*1000)}
+// Verrou adapté : un seul carnet sur l'appareil (téléphone d'élève) → 2 h (durée du cours) ; plusieurs carnets (tablette partagée) → 20 min.
+const seulCarnet=()=>Object.keys(ROOT.groupes).length<=1,minVerrou=()=>seulCarnet()?120:20,txtVerrou=()=>'Carnet verrouillé ('+(seulCarnet()?'2 h':'20 min')+' sans activité).';
+function reveil(){clearTimeout(tInactif);if(S)tInactif=setTimeout(async()=>{if(S&&!document.documentElement.classList.contains('chrono-ouvert')){await verrouiller();fermer();rendre();toast(txtVerrou())}},minVerrou()*60*1000)}
 ['click','input','touchstart'].forEach(e=>document.addEventListener(e,reveil,{passive:true}));
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&S)enregistrer()});
 let CODE_CB=null;
