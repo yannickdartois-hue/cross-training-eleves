@@ -17,6 +17,9 @@
   'use strict';
   if(window.EPSCode)return;
   var DUREE=2*60*60*1000,MAX_ESSAIS=5,ATTENTE=60*1000;
+  /* window.EPS_CODE_JOURNEE=true (déclaré par l'appli) : le code reste valable jusqu'à minuit au lieu de 2 heures */
+  function finOuv(){if(window.EPS_CODE_JOURNEE){var m=new Date();m.setHours(23,59,59,0);return m.getTime()}return Date.now()+DUREE}
+  function duree(){return window.EPS_CODE_JOURNEE?'toute la journée':'pendant 2 heures'}
   var enc=new TextEncoder();
   function b64(u){var s='';u.forEach(function(x){s+=String.fromCharCode(x)});return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
   function deb64(s){s=String(s).replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';var b=atob(s),u=new Uint8Array(b.length);for(var i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u}
@@ -100,7 +103,7 @@
     var cle=cleDe(c);if(!cle){if(apres)apres();return}
     var o=ouverture(c),cur=C.seance&&C.seance();
     var info=o?'<p>La séance ouverte aujourd’hui est <b>'+esc(nom(o.s))+'</b> (jusqu’à '+heure(o.fin)+').</p>'+(String(o.s)!==String(cur)?'<p><button type="button" class="eps-code-ok" id="eps-code-aller">Aller à '+esc(nom(o.s))+'</button></p>':''):'';
-    var v=fenetre('<h3>🔑 Code du cours</h3><p>Tape le code à 4 chiffres donné par ton professeur en début de cours. Il ouvre la séance du jour pendant 2 heures.</p><p style="font-size:14px;color:#475569">Plus rapide : scanne le QR de la classe affiché par ton professeur, la séance s’ouvre toute seule.</p>'+info+
+    var v=fenetre('<h3>🔑 Code du cours</h3><p>Tape le code à 4 chiffres donné par ton professeur en début de cours. Il ouvre la séance du jour '+duree()+'.</p><p style="font-size:14px;color:#475569">Plus rapide : scanne le QR de la classe affiché par ton professeur, la séance s’ouvre toute seule.</p>'+info+
       '<input class="eps-code-saisie" id="eps-code-in" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-label="Code du cours à 4 chiffres">'+
       '<p class="eps-code-err" id="eps-code-err" role="alert"></p>'+
       '<div class="eps-code-bts"><button type="button" class="eps-code-non" id="eps-code-non">Annuler</button><button type="button" class="eps-code-ok" id="eps-code-ok">Ouvrir la séance</button></div>');
@@ -117,7 +120,7 @@
       for(var i=0;i<L.length;i++){if(await code(cle,c,d,L[i])===x){trouve=L[i];break}}
       if(trouve==null){e.n++;e.t=Date.now();s.essais=e;ecrire(K,s);inp.value='';
         err.textContent=e.n>=MAX_ESSAIS?'Code faux. Trop d’essais : attends 1 minute.':'Code faux. Vérifie la date du téléphone ou redemande le code.';return}
-      s.essais={n:0,t:0};s.ouv=s.ouv||{};s.ouv[c]={s:trouve,d:d,h:Date.now(),fin:Date.now()+DUREE};ecrire(K,s);
+      s.essais={n:0,t:0};s.ouv=s.ouv||{};s.ouv[c]={s:trouve,d:d,h:Date.now(),fin:finOuv()};ecrire(K,s);
       fermerFen();C.ouvrir(trouve);rafraichir();if(apres)apres();
     }
     v.querySelector('#eps-code-ok').onclick=essayer;
@@ -200,7 +203,7 @@
       '<label for="eps-code-d">Date du cours</label><input type="date" id="eps-code-d" value="'+jour()+'">'+
       '<div class="eps-code-grand" id="eps-code-val" aria-live="polite">····</div>'+
       '<p id="eps-code-txt" style="text-align:center;font-weight:700"></p>'+
-      '<p style="font-size:14px;color:#475569">À écrire au tableau. Chaque groupe le tape sur son téléphone : la séance s’ouvre pour 2 heures. Valable seulement ce jour-là'+(une?'':' et pour cette séance')+'. Fonctionne sans internet.</p>'+
+      '<p style="font-size:14px;color:#475569">À écrire au tableau. Chaque groupe le tape sur son téléphone : la séance s’ouvre '+(window.EPS_CODE_JOURNEE?'pour toute la journée':'pour 2 heures')+'. Valable seulement ce jour-là'+(une?'':' et pour cette séance')+'. Fonctionne sans internet.</p>'+
       '<p style="font-size:14px;color:#0f6b5c;font-weight:700">Plus rapide : le QR de la classe affiché aujourd’hui ouvre aussi '+(une?'la séance':'cette séance')+' (téléphones à jour). Un seul scan par groupe.</p>'+
       '<div class="eps-code-bts"><span></span><button type="button" class="eps-code-ok" id="eps-code-f">Fermer</button></div>');
     var sel=v.querySelector('#eps-code-s'),dat=v.querySelector('#eps-code-d');
@@ -240,7 +243,7 @@
       var cle=cleDe(classe);if(!cle)return false;
       if(await code(cle,classe,cj.d,cj.s)!==String(cj.k))return false;
       var s=sto();s.ouv=s.ouv||{};var o=s.ouv[classe];
-      if(!(o&&o.d===cj.d&&String(o.s)===String(cj.s)&&Date.now()<o.fin)){s.ouv[classe]={s:String(cj.s),d:cj.d,h:Date.now(),fin:Date.now()+DUREE};ecrire(K,s)}
+      if(!(o&&o.d===cj.d&&String(o.s)===String(cj.s)&&Date.now()<o.fin)){s.ouv[classe]={s:String(cj.s),d:cj.d,h:Date.now(),fin:finOuv()};ecrire(K,s)}
       if(C&&C.classe&&C.classe()===classe&&C.ouvrir&&C.seance&&String(C.seance())!==String(cj.s)){try{C.ouvrir(String(cj.s))}catch(e){}}
       if(C)rafraichir();
       return true;
