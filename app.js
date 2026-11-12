@@ -91,7 +91,7 @@ function demanderCode(titre,texte,cb,creer){
     <input id="code" class="code" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-label="Code à 4 chiffres">
     <p id="code-msg" class="small" style="min-height:1.4em;font-weight:700;color:var(--alerte)"></p>
     <div class="rangee" style="justify-content:space-between"><button class="bt" type="button" data-act="fermer">Annuler</button><button class="bt noir" type="button" data-act="codeok">Valider</button></div>
-    ${creer?'':'<p class="small" style="margin-top:12px"><button class="lien" type="button" data-act="codeoubli">Code oublié ?</button></p>'}`);
+    ${creer?'<p class="small" style="margin-top:10px">✎ <b>Notez ce code</b> au dos de votre carnet ou dans votre agenda : sans lui, le carnet ne s’ouvre plus.</p>':'<p class="small" style="margin-top:12px"><button class="lien" type="button" data-act="codeoubli">Code oublié ?</button></p>'}`);
   setTimeout(()=>{const i=$('#code');if(i)i.focus()},50);
 }
 async function validerCode(){
@@ -531,7 +531,7 @@ document.addEventListener('click',async ev=>{
     catch(e){toast('Démo : '+e.message);return}
     rendre();toast('Démo ouverte (code 0000).');return}
   if(a==='codeoubli'){const id=CODE_CB&&CODE_CB.id;if(!id)return;
-    fen(`<h3>Code oublié</h3><p>Sans le code, ce carnet ne peut pas être ouvert, même par le professeur.</p><p class="small">Supprimez-le et créez un nouveau binôme. Vos séances déjà envoyées sont chez le professeur.</p>
+    fen(`<h3>Code oublié</h3><p>Sans le code, ce carnet ne peut pas être rouvert, même par le professeur. Voici quoi faire :</p><ol class="small"><li><b>Supprimez ce carnet</b> (bouton rouge ci-dessous).</li><li><b>Créez un nouveau binôme</b> avec un nouveau code : notez-le.</li><li><b>Prévenez le professeur</b> : vos séances déjà envoyées sont chez lui, rien n’est perdu de ce côté.</li></ol><p class="small muted">Ce qui n’avait pas été envoyé au professeur est perdu.</p>
       <div class="rangee" style="justify-content:space-between"><button class="bt" type="button" data-act="fermer">Annuler</button><button class="bt danger" type="button" data-act="suppridoublie" data-v="${id}">Supprimer ce carnet</button></div>`);return}
   if(a==='suppridoublie'){delete ROOT.groupes[v];ecrireRoot();fermer();rendre();toast('Carnet supprimé.');return}
   if(a==='nouveauqr'||(a==='qrclasse'&&!S)){TTQR.scanner(async t=>recevoirClasse(await TTQR.decoder(t)),{titre:'QR de la classe',aide:'Scanne le QR affiché par le professeur.'});return}
