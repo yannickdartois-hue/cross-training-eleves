@@ -48,7 +48,7 @@
 })();
 
 /* ---------------------------------------------------------------------
-   Numéro de version, discret, en haut à droite (ex. « v26 »).
+   Numéro de version, lisible, en haut à droite (ex. « v26 ») : 13 px sur une pastille claire (13/11/2026 : l'ancien 10 px gris était illisible).
    Version réellement installée = nom du cache de l'appli (marche hors
    ligne) ; à défaut, version lue dans sw.js. Masqué à l'impression,
    ne gêne aucun bouton (aucun clic).
@@ -63,7 +63,7 @@
     var e=document.getElementById('eps-version');
     if(!e){
       e=document.createElement('div');e.id='eps-version';e.setAttribute('aria-hidden','true');
-      e.style.cssText='position:fixed;top:max(1px,env(safe-area-inset-top));right:3px;z-index:2147482000;font:600 10px/1.2 system-ui,Arial,sans-serif;color:#000;opacity:.32;pointer-events:none';
+      e.style.cssText='position:fixed;top:max(2px,env(safe-area-inset-top));right:4px;z-index:2147482000;font:700 13px/1.2 system-ui,Arial,sans-serif;color:#1f2937;background:rgba(255,255,255,.88);border:1px solid rgba(31,41,55,.25);border-radius:7px;padding:1px 6px;pointer-events:none';
       var st=document.createElement('style');st.textContent='@media print{#eps-version{display:none}}';document.head.appendChild(st);
       document.body.appendChild(e);
     }
