@@ -133,7 +133,7 @@ function vChoix(){
     ${C.length?`<p class="small muted">Classes déjà enregistrées sur la tablette :</p><div class="rangee">${C.map(c=>`<button type="button" class="bt" data-act="nouveau" data-v="${esc(c)}">${esc(c)}</button>`).join('')}</div><p class="small muted" style="margin-top:10px">Autre classe :</p>`:''}
     <button type="button" class="bt orange" data-act="nouveauqr">Scanner le QR de la classe</button></section>
   <section class="carte"><h3>Reprendre un carnet</h3><p class="small muted">Tablette changée ou vidée : choisis le fichier de sauvegarde du carnet (dans Téléchargements), puis tape votre code secret.</p><label class="bt mini" for="reprise">Reprendre un carnet</label><input id="reprise" type="file" accept=".json,application/json" hidden></section>
-  <section class="carte"><h3>Démonstration</h3><p class="small muted">Pour essayer l’appli sans classe (professeur) : un binôme fictif « Alice · Bruno », code 0000.</p><button type="button" class="bt mini" data-act="demo">Ouvrir la démo</button></section>`;
+  <section class="carte"><h3>Démonstration</h3><p class="small muted">Pour essayer l’appli sans classe (professeur) : un binôme fictif « Alice · Bruno ». Rien n’est enregistré : les vrais carnets de la tablette ne sont pas touchés.</p><button type="button" class="bt mini" data-act="demo">Ouvrir la démo</button></section>`;
 }
 function rendre(){
   try{document.documentElement.dataset.qui=S&&S.eleves&&S.eleves.length>1?String(S.cur):''}catch(e){}
