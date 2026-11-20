@@ -92,7 +92,8 @@
   /* 'libre' (pas de clé, démo…), 'ouverte' ou 'fermee' */
   function etat(seance){
     if(sansVerrou())return 'libre';
-    var c=C.classe&&C.classe();if(!c||!cleDe(c))return 'libre';
+    var c=C.classe&&C.classe();if(!c)return 'libre';
+    if(!cleDe(c))return C.cleObligatoire?'fermee':'libre';   /* cleObligatoire : sans QR de classe récent, la saisie reste fermée */
     var o=ouverture(c);if(seance==null)seance=C.seance&&C.seance();
     return o&&String(o.s)===String(seance)?'ouverte':'fermee';
   }
@@ -100,13 +101,24 @@
 
   function demander(apres){
     var c=C.classe&&C.classe();if(!c)return;
-    var cle=cleDe(c);if(!cle){if(apres)apres();return}
+    var cle=cleDe(c);
+    if(!cle){if(!C.cleObligatoire){if(apres)apres();return}
+      var w=fenetre('<h3>📷 QR de la classe</h3><p>Pour ouvrir la séance, scanne le <b>QR de la classe</b> affiché par ton professeur.</p>'+
+        '<div class="eps-code-bts"><button type="button" class="eps-code-non" id="eps-code-non">Annuler</button>'+(C.scanner?'<button type="button" class="eps-code-ok" id="eps-code-scan">Scanner le QR</button>':'')+'</div>');
+      w.querySelector('#eps-code-non').onclick=fermerFen;var sc=w.querySelector('#eps-code-scan');if(sc)sc.onclick=function(){fermerFen();C.scanner()};return}
     var o=ouverture(c),cur=C.seance&&C.seance();
     var info=o?'<p>La séance ouverte aujourd’hui est <b>'+esc(nom(o.s))+'</b> (jusqu’à '+heure(o.fin)+').</p>'+(String(o.s)!==String(cur)?'<p><button type="button" class="eps-code-ok" id="eps-code-aller">Aller à '+esc(nom(o.s))+'</button></p>':''):'';
-    var v=fenetre('<h3>🔑 Code du cours</h3><p>Tape le code à 4 chiffres donné par ton professeur en début de cours. Il ouvre la séance du jour '+duree()+'.</p><p style="font-size:14px;color:#475569">Plus rapide : scanne le QR de la classe affiché par ton professeur, la séance s’ouvre toute seule.</p>'+info+
-      '<input class="eps-code-saisie" id="eps-code-in" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-label="Code du cours à 4 chiffres">'+
-      '<p class="eps-code-err" id="eps-code-err" role="alert"></p>'+
+    var saisie='<input class="eps-code-saisie" id="eps-code-in" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" aria-label="Code du cours à 4 chiffres">'+
+      '<p class="eps-code-err" id="eps-code-err" role="alert"></p>';
+    /* C.scanner (option) : le QR de la classe est l'action principale, le code tapé reste en secours */
+    var v=C.scanner?fenetre('<h3>📷 Ouvrir la séance</h3><p>Scanne le <b>QR de la classe</b> affiché par ton professeur : la séance du jour s’ouvre toute seule '+duree()+'.</p>'+info+
+        '<p><button type="button" class="eps-code-ok" id="eps-code-scan" style="width:100%;min-height:56px;font-size:18px">📷 Scanner le QR de la classe</button></p>'+
+        '<details id="eps-code-sec"><summary style="cursor:pointer;color:#475569;font-size:15px">Le professeur n’a pas de QR ? Taper le code</summary>'+saisie+
+        '<div class="eps-code-bts"><span></span><button type="button" class="eps-code-ok" id="eps-code-ok">Ouvrir avec le code</button></div></details>'+
+        '<div class="eps-code-bts"><button type="button" class="eps-code-non" id="eps-code-non">Annuler</button></div>')
+      :fenetre('<h3>🔑 Code du cours</h3><p>Tape le code à 4 chiffres donné par ton professeur en début de cours. Il ouvre la séance du jour '+duree()+'.</p><p style="font-size:14px;color:#475569">Plus rapide : scanne le QR de la classe affiché par ton professeur, la séance s’ouvre toute seule.</p>'+info+saisie+
       '<div class="eps-code-bts"><button type="button" class="eps-code-non" id="eps-code-non">Annuler</button><button type="button" class="eps-code-ok" id="eps-code-ok">Ouvrir la séance</button></div>');
+    var scb=v.querySelector('#eps-code-scan');if(scb)scb.onclick=function(){fermerFen();C.scanner()};
     var inp=v.querySelector('#eps-code-in'),err=v.querySelector('#eps-code-err');
     var al=v.querySelector('#eps-code-aller');if(al)al.onclick=function(){fermerFen();C.ouvrir(o.s);rafraichir()};
     v.querySelector('#eps-code-non').onclick=fermerFen;
@@ -126,14 +138,14 @@
     v.querySelector('#eps-code-ok').onclick=essayer;
     inp.addEventListener('keydown',function(e){if(e.key==='Enter')essayer()});
     inp.addEventListener('input',function(){if(inp.value.replace(/\D/g,'').length===4)essayer()});
-    setTimeout(function(){inp.focus()},60);
+    if(!C.scanner)setTimeout(function(){inp.focus()},60);
   }
 
   function bandeauHtml(st){
     var c=C.classe(),o=ouverture(c),cur=C.seance();
     if(st==='ouverte')return '<div class="eps-code-bandeau ouvert" data-eps-code>✅ '+esc(nom(cur))+' ouverte jusqu’à '+heure(o.fin)+'.</div>';
-    var txt=o?'🔒 '+esc(nom(cur))+' : pas modifiable. La séance du jour est '+esc(nom(o.s))+'.':'🔒 '+esc(nom(cur))+' fermée : la saisie se fait en cours, avec le code du professeur.';
-    return '<div class="eps-code-bandeau ferme" data-eps-code><span>'+txt+'</span><button type="button" data-eps-code-ouvrir>'+(o&&String(o.s)!==String(cur)?'Aller à '+esc(nom(o.s)):'🔑 Code du cours')+'</button></div>';
+    var txt=o?'🔒 '+esc(nom(cur))+' : pas modifiable. La séance du jour est '+esc(nom(o.s))+'.':'🔒 '+esc(nom(cur))+' fermée : la saisie se fait en cours, '+(C.scanner?'avec le QR de la classe.':'avec le code du professeur.');
+    return '<div class="eps-code-bandeau ferme" data-eps-code><span>'+txt+'</span><button type="button" data-eps-code-ouvrir>'+(o&&String(o.s)!==String(cur)?'Aller à '+esc(nom(o.s)):(C.scanner?'📷 Scanner le QR':'🔑 Code du cours'))+'</button></div>';
   }
   var enCours=false;
   function rafraichir(){

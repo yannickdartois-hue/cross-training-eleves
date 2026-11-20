@@ -12,6 +12,7 @@
      - variable DEMO de l'appli vraie (let DEMO=… dans la plupart des applis),
      - ou bandeau jaune .demo-bandeau présent dans la page.
    En sortant de la démo, « ?demo » est retiré de l'adresse (un rechargement ne relance pas la démo).
+   Téléphone (moins de 600 px) : une seule ligne « 🎭 DÉMO · ⋯ · Quitter » ; ⋯ déplie les autres boutons (20/11/2026).
    Bouton « Quitter » : clique le bouton « Quitter la démo » du bandeau jaune s'il existe,
      sinon appelle la fonction donnée par data-quitter="nomDeFonction",
      sinon quitterDemo() puis rendre(), sinon recharge la page sans « ?demo ».
@@ -40,6 +41,11 @@
       'body.eps-demo-cache .eps-demo{display:none}'+
       'body.eps-demo-actif .demo-bandeau{display:none!important}'+
       '.eps-demo a.eps-demo-lien{text-decoration:none}'+
+      '.eps-demo button.eps-demo-plus{display:none}'+
+      /* téléphone (20/11/2026) : une seule ligne « 🎭 DÉMO · ⋯ · Quitter » ; les autres boutons s'ouvrent avec ⋯ */
+      '@media (max-width:600px){.eps-demo{gap:6px;padding:5px 6px 5px 10px;max-width:calc(100% - 16px);left:8px}.eps-demo .eps-demo-txt{display:none}'+
+      '.eps-demo button{min-height:40px;padding:0 10px}.eps-demo button.eps-demo-plus{display:inline-block;font-size:20px;letter-spacing:1px}'+
+      '.eps-demo button.eps-demo-act{display:none}.eps-demo.ouvert button.eps-demo-act{display:inline-block}.eps-demo.ouvert .eps-demo-txt{display:inline}}'+
       '@media print{.eps-demo{display:none!important}}';
     (document.head||document.documentElement).appendChild(s);
   }
@@ -88,7 +94,9 @@
     cle=k;
     barre=document.createElement('div');barre.className='eps-demo';barre.setAttribute('role','status');
     barre.innerHTML='<b>🎭 DÉMO</b><span class="eps-demo-txt">rien n’est enregistré</span>';
-    acts.forEach(function(a){var b=document.createElement('button');b.type='button';b.textContent=a.texte;b.onclick=function(){a.fn();};barre.appendChild(b);});
+    if(acts.length){var pl=document.createElement('button');pl.type='button';pl.className='eps-demo-plus';pl.textContent='⋯';pl.setAttribute('aria-label','Autres actions de la démo');
+      pl.onclick=function(){var o=barre.classList.toggle('ouvert');pl.textContent=o?'✕':'⋯';};barre.appendChild(pl);}
+    acts.forEach(function(a){var b=document.createElement('button');b.type='button';b.className='eps-demo-act';b.textContent=a.texte;b.onclick=function(){barre.classList.remove('ouvert');a.fn();};barre.appendChild(b);});
     var q=document.createElement('button');q.type='button';q.className='eps-demo-q';q.textContent='Quitter';q.onclick=quitter;barre.appendChild(q);
     if(OPT.bas)document.documentElement.style.setProperty('--eps-demo-bas',OPT.bas);
     document.body.appendChild(barre);
