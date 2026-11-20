@@ -31,22 +31,29 @@
     var d=document.createElement('div');d.id='eps-conf';
     d.innerHTML='<a href="'+URL_CONF+'" target="_blank" rel="noopener">Confidentialité</a>';
     document.body.appendChild(d);
-    caler();addEventListener('resize',caler);setTimeout(placer,1200);
+    d.style.display='none';   /* invisible tant qu'on n'a pas choisi sa place */
+    addEventListener('resize',caler);setTimeout(function(){d.style.display='';placer()},1200);
   }
   /* appli « plein écran » (la page ne défile pas, une zone intérieure défile) : le lien va au bout de cette zone,
      et revient s'il est effacé quand l'appli redessine son écran */
   var zone=null;
   function placer(){
     var d=document.getElementById('eps-conf');if(!d)return;
-    var se=document.scrollingElement||document.documentElement;
-    if(se.scrollHeight>innerHeight+4){caler();return;}
+    var se=document.scrollingElement||document.documentElement,lim=innerHeight+4;
+    /* on mesure la page SANS le lien : il ne doit jamais rendre défilante une page qui ne l'était pas */
+    d.style.display='none';var defile=se.scrollHeight>lim;d.style.display='';
+    if(defile){caler();return;}
+    if(se.scrollHeight<=lim)return;          /* le lien tient sous le contenu sans faire défiler */
+    /* écran « plein écran » : le lien va au bout de la zone intérieure qui défile (le corps de page compris) */
     var best=null,aire=0;
-    [].forEach.call(document.body.querySelectorAll('*'),function(e){
-      if(e.offsetParent===null&&getComputedStyle(e).position!=='fixed')return;
+    [document.body].concat([].slice.call(document.body.querySelectorAll('*'))).forEach(function(e){
+      if(e===d||d.contains(e))return;
+      if(e!==document.body&&e.offsetParent===null&&getComputedStyle(e).position!=='fixed')return;
       var c=getComputedStyle(e);if(!/(auto|scroll)/.test(c.overflowY))return;
       var r=e.getBoundingClientRect();var a=r.width*r.height;if(r.width>innerWidth*0.6&&r.height>innerHeight*0.4&&a>aire){aire=a;best=e;}
     });
-    if(!best)return;zone=best;zone.appendChild(d);d.style.paddingBottom='22px';
+    if(!best||best===document.body&&getComputedStyle(document.body).overflowY==='visible'){d.parentNode&&d.parentNode.removeChild(d);return;}   /* pas de place : pas de lien */
+    zone=best;if(zone!==document.body)zone.appendChild(d);d.style.paddingBottom='22px';
     new MutationObserver(function(){if(!zone.contains(d))zone.appendChild(d);else if(zone.lastElementChild!==d)zone.appendChild(d);}).observe(zone,{childList:true});
   }
   /* si une barre est fixée en bas (navigation, boutons), on laisse sa hauteur sous le lien */
@@ -96,7 +103,8 @@
 })();
 
 /* ---------------------------------------------------------------------
-   Numéro de version, lisible, en haut à droite (ex. « v1.2 ») : 13 px sur une pastille claire (13/11/2026 : l'ancien 10 px gris était illisible).
+   Numéro de version, lisible, en haut à droite, 8 px sous le bord (21/11/2026 : collé au bord, Safari sur iPad
+   le prenait pour la barre du haut et brouillait toute la bande supérieure) (ex. « v1.2 ») : 13 px sur une pastille claire (13/11/2026 : l'ancien 10 px gris était illisible).
    Version réellement installée = nom du cache de l'appli (marche hors
    ligne) ; à défaut, version lue dans sw.js. Masqué à l'impression,
    ne gêne aucun bouton (aucun clic).
@@ -111,7 +119,7 @@
     var e=document.getElementById('eps-version');
     if(!e){
       e=document.createElement('div');e.id='eps-version';e.setAttribute('aria-hidden','true');
-      e.style.cssText='position:fixed;top:max(2px,env(safe-area-inset-top));right:4px;z-index:2147482000;font:700 13px/1.2 system-ui,Arial,sans-serif;color:#1f2937;background:rgba(255,255,255,.88);border:1px solid rgba(31,41,55,.25);border-radius:7px;padding:1px 6px;pointer-events:none';
+      e.style.cssText='position:fixed;top:calc(env(safe-area-inset-top, 0px) + 8px);right:6px;z-index:2147482000;font:700 13px/1.2 system-ui,Arial,sans-serif;color:#1f2937;background:#fff;border:1px solid rgba(31,41,55,.25);border-radius:7px;padding:1px 6px;pointer-events:none';
       var st=document.createElement('style');st.textContent='@media print{#eps-version{display:none}}';document.head.appendChild(st);
       document.body.appendChild(e);
     }
