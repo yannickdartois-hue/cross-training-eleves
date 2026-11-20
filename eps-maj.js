@@ -14,6 +14,38 @@
    data-bandeau="non" : il ne fait alors que les vérifications.
    Il pose aussi le lien « Confidentialité » en bas de page (voir plus bas).
    ===================================================================== */
+/* Bord du haut net sur iPad (21/11/2026).
+   Depuis iPadOS 26, une appli ouverte depuis l'écran d'accueil reçoit un voile flou en haut de l'écran,
+   SAUF si un élément fixe et opaque, qui reçoit les touchers, couvre le bord supérieur.
+   On pose donc une fine bande fixe de la couleur du haut de la page (relue régulièrement : elle suit l'appli). */
+(function(){
+  var sc=document.currentScript;if(sc&&sc.getAttribute('data-bord')==='non')return;
+  function couleur(el){
+    while(el&&el.nodeType===1){var c=getComputedStyle(el).backgroundColor||'',v=null,m;
+      if((m=c.match(/rgba?\(([^)]+)\)/)))v=m[1].split(',').map(parseFloat);
+      else if((m=c.match(/color\(srgb ([^)]+)\)/))){var t=m[1].replace('/',' ').split(/\s+/).filter(Boolean).map(parseFloat);v=[t[0]*255,t[1]*255,t[2]*255,t.length>3?t[3]:1];}
+      if(v&&(v.length<4||v[3]>0.6))return 'rgb('+Math.round(v[0])+','+Math.round(v[1])+','+Math.round(v[2])+')';
+      el=el.parentElement;}
+    return null;
+  }
+  function poser(){
+    if(!document.body||document.getElementById('eps-bord'))return;
+    var b=document.createElement('div');b.id='eps-bord';b.setAttribute('aria-hidden','true');
+    b.style.cssText='position:fixed;top:0;left:0;right:0;height:calc(env(safe-area-inset-top, 0px) + 5px);z-index:2147481000;background:#fff';
+    document.body.appendChild(b);
+    var st=document.createElement('style');st.textContent='@media print{#eps-bord{display:none}}';document.head.appendChild(st);
+    function teinter(){
+      b.style.visibility='hidden';
+      var el=document.elementFromPoint(Math.round(innerWidth/2),Math.max(8,(b.offsetHeight||5)+3));
+      b.style.visibility='';
+      var c=couleur(el)||couleur(document.body)||couleur(document.documentElement)||'#ffffff';
+      if(b.style.background!==c)b.style.background=c;
+    }
+    teinter();setInterval(teinter,1500);addEventListener('scroll',teinter,{passive:true});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',poser);else poser();
+})();
+
 /* Lien « Confidentialité » en bas de chaque appli (20/11/2026).
    Ajouté à la fin de la page ; décalé au-dessus d'une barre fixée en bas de l'écran.
    Une appli peut s'en passer avec data-confidentialite="non" sur la balise de ce script. */
