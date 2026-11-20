@@ -60,7 +60,7 @@ function vuePartage(v){const c=v.querySelector('.epsa-corps');v.querySelector('.
     <div class="qr" aria-label="QR code de l’adresse de l’appli">…</div><div class="url">${u}</div>
     <ol><li>Il lui faut <b>internet une seule fois</b>, pour ce premier chargement. S’il n’a pas de forfait : active ton <b>partage de connexion</b> le temps de l’installation.</li>
     <li>L’appli s’ouvre. <b>iPhone</b> : dans <b>Safari</b>, bouton Partager → « Sur l’écran d’accueil ». <b>Android</b> : menu ⋮ de Chrome → « Ajouter à l’écran d’accueil » ou « Installer l’appli ».</li>
-    <li>Ensuite, l’appli marche <b>sans internet</b>. Ses données restent sur son téléphone : rien n’est copié depuis le tien.</li></ol>
+    ${A.partageNote?'<li>'+A.partageNote+'</li>':''}<li>Ensuite, l’appli marche <b>sans internet</b>. Ses données restent sur son téléphone : rien n’est copié depuis le tien.</li></ol>
     <button type="button" class="epsa-fermer" data-epsa-retour>← Retour au mode d’emploi</button></div>`;
   chargerQR().then(()=>{const q=qrcode(0,'M');q.addData(u);q.make();c.querySelector('.qr').innerHTML=q.createSvgTag({cellSize:6,margin:2,scalable:true})})
     .catch(()=>{c.querySelector('.qr').textContent='QR indisponible hors ligne : recopie l’adresse ci-dessous.'})}

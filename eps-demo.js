@@ -11,6 +11,7 @@
    Détection automatique (aucun code à ajouter dans l'appli) :
      - variable DEMO de l'appli vraie (let DEMO=… dans la plupart des applis),
      - ou bandeau jaune .demo-bandeau présent dans la page.
+   En sortant de la démo, « ?demo » est retiré de l'adresse (un rechargement ne relance pas la démo).
    Bouton « Quitter » : clique le bouton « Quitter la démo » du bandeau jaune s'il existe,
      sinon appelle la fonction donnée par data-quitter="nomDeFonction",
      sinon quitterDemo() puis rendre(), sinon recharge la page sans « ?demo ».
@@ -46,6 +47,14 @@
     if(manuel)return true;
     try{if(typeof DEMO!=='undefined'&&DEMO)return true;}catch(e){}
     return !!document.querySelector('.demo-bandeau');
+  }
+  /* démo terminée : on retire « ?demo » de l'adresse, sinon un rechargement de la page relancerait la démo */
+  function nettoyerAdresse(){
+    try{
+      if(!/[?&]demo\b/.test(location.search))return;
+      var q=location.search.replace(/([?&])demo(=[^&]*)?(&|$)/,'$1').replace(/[?&]$/,'');
+      history.replaceState(history.state,'',location.pathname+q+location.hash);
+    }catch(e){}
   }
   function quitter(){
     if(manuel&&typeof manuel.quitter==='function')return manuel.quitter();
@@ -104,7 +113,7 @@
   function verifier(){
     if(!document.body)return;
     if(enDemo()){construire();placer();document.body.classList.add('eps-demo-actif');}
-    else{document.body.classList.remove('eps-demo-actif');if(barre){barre.remove();barre=null;cle='';}}
+    else{document.body.classList.remove('eps-demo-actif');if(barre){barre.remove();barre=null;cle='';nettoyerAdresse();}}
   }
   window.EPSDemo={
     montrer:function(o){manuel=o||{};cle='-';verifier();},
