@@ -12,7 +12,55 @@
    Ne fait rien sans service worker ni sans réseau.
    Une appli qui a déjà son propre bandeau charge ce fichier avec
    data-bandeau="non" : il ne fait alors que les vérifications.
+   Il pose aussi le lien « Confidentialité » en bas de page (voir plus bas).
    ===================================================================== */
+/* Lien « Confidentialité » en bas de chaque appli (20/11/2026).
+   Ajouté à la fin de la page ; décalé au-dessus d'une barre fixée en bas de l'écran.
+   Une appli peut s'en passer avec data-confidentialite="non" sur la balise de ce script. */
+(function(){
+  var sc=document.currentScript;
+  if(sc&&sc.getAttribute('data-confidentialite')==='non')return;
+  var URL_CONF='https://yannickdartois-hue.github.io/mon-EPS/confidentialite.html';
+  function poser(){
+    if(document.getElementById('eps-conf')||!document.body)return;
+    var st=document.createElement('style');st.id='eps-conf-style';
+    st.textContent='#eps-conf{text-align:center;padding:18px 12px 22px;font:14px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;clear:both}'+
+      '#eps-conf a{color:#5b6470;text-decoration:underline;text-underline-offset:2px;display:inline-block;padding:8px 6px}'+
+      '@media print{#eps-conf{display:none}}';
+    document.head.appendChild(st);
+    var d=document.createElement('div');d.id='eps-conf';
+    d.innerHTML='<a href="'+URL_CONF+'" target="_blank" rel="noopener">Confidentialité</a>';
+    document.body.appendChild(d);
+    caler();addEventListener('resize',caler);setTimeout(placer,1200);
+  }
+  /* appli « plein écran » (la page ne défile pas, une zone intérieure défile) : le lien va au bout de cette zone,
+     et revient s'il est effacé quand l'appli redessine son écran */
+  var zone=null;
+  function placer(){
+    var d=document.getElementById('eps-conf');if(!d)return;
+    var se=document.scrollingElement||document.documentElement;
+    if(se.scrollHeight>innerHeight+4){caler();return;}
+    var best=null,aire=0;
+    [].forEach.call(document.body.querySelectorAll('*'),function(e){
+      if(e.offsetParent===null&&getComputedStyle(e).position!=='fixed')return;
+      var c=getComputedStyle(e);if(!/(auto|scroll)/.test(c.overflowY))return;
+      var r=e.getBoundingClientRect();var a=r.width*r.height;if(r.width>innerWidth*0.6&&r.height>innerHeight*0.4&&a>aire){aire=a;best=e;}
+    });
+    if(!best)return;zone=best;zone.appendChild(d);d.style.paddingBottom='22px';
+    new MutationObserver(function(){if(!zone.contains(d))zone.appendChild(d);else if(zone.lastElementChild!==d)zone.appendChild(d);}).observe(zone,{childList:true});
+  }
+  /* si une barre est fixée en bas (navigation, boutons), on laisse sa hauteur sous le lien */
+  function caler(){
+    var d=document.getElementById('eps-conf');if(!d)return;var h=0;
+    [].forEach.call(document.body.querySelectorAll('nav,footer,header,div,section'),function(e){
+      if(e===d||e.contains(d))return;var c=getComputedStyle(e);if(c.position!=='fixed'&&c.position!=='sticky')return;
+      var r=e.getBoundingClientRect();if(r.height>0&&r.height<innerHeight/2&&Math.abs(r.bottom-innerHeight)<4&&c.position==='fixed')h=Math.max(h,r.height);
+    });
+    d.style.paddingBottom=(22+h)+'px';
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',poser);else poser();
+})();
+
 (function(){
   'use strict';
   if(!('serviceWorker' in navigator)||window.__epsMaj)return;
