@@ -20,6 +20,8 @@ function son(f,d,v){const m=mode();if(m==='silent')return;if(m==='vibrate'){try{
   try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();if(ac.state==='suspended')ac.resume();
   const o=ac.createOscillator(),g=ac.createGain(),t=ac.currentTime;o.frequency.value=f;g.gain.setValueAtTime(v||.3,t);g.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+d+.02)}catch(e){}}
 const bipCourt=()=>son(880,.12),bipGo=()=>son(1320,.45,.4);
+/* v1.7 : coup de sifflet + vibration (eps-sifflet.js) ; false = bips habituels */
+const SIF=k=>{try{return !!(root.EPSSifflet&&root.EPSSifflet[k]())}catch(e){return false}};
 const fanfare=()=>{[[523,0],[659,120],[784,240],[1047,380]].forEach(([f,d])=>setTimeout(()=>son(f,d===380?.4:.1,.45),d))};
 async function eveil(on){try{if(on&&navigator.wakeLock)lock=await navigator.wakeLock.request('screen');else if(lock){lock.release();lock=null}}catch(e){}}
 const mmss=s=>{s=Math.max(0,Math.ceil(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
@@ -46,7 +48,7 @@ function lancer(W,opts){
   if(!R.critLog)R.critLog=[];
   const COMPLET=!!opts.complet; // saisie complète : critères demandés après chaque exercice, ressentis détaillés, commentaire et conseil obligatoires
   let dernierHtml='';
-  let t0=null,pauseA=null,pauseMs=0,fini=false,tick=null,dernierS=-1,phaseVue=snap?snap.phaseVue||'':'',arret=false,dernierEtat=0;
+  let miFait={},t0=null,pauseA=null,pauseMs=0,fini=false,tick=null,dernierS=-1,phaseVue=snap?snap.phaseVue||'':'',arret=false,dernierEtat=0;
   let file=[]; // exercices dont la note d'exécution est demandée (index)
   const repsE1=(j,i)=>W.f==='emom'?((ex[j]&&ex[j].reps)||7):((ex[j]&&ex[j].reps)||p.dep||6)+i;
   const SEQ=W.f==='emom'||W.f==='emom1'; // EMOM et EMOM+1 : exercices validés un par un (appli d'origine)
@@ -99,11 +101,13 @@ function lancer(W,opts){
       if(s<=3&&s>=1&&(typ==='prep'||typ==='rep'||(prochain&&prochain[0]==='min')))bipCourt();
       if((typ==='eff'||typ==='amrap')&&s<=3&&s>=1)bipCourt()}
     const cle=o.k+'';if(cle!==phaseVue){const avant=phaseVue;phaseVue=cle;
-      if(typ==='eff'||typ==='min'||typ==='amrap'||typ==='ft'){bipGo();file=[]}
-      if(typ==='rep'){son(440,.18,.5);setTimeout(()=>son(440,.18,.5),250);demanderNotes([exoDuRound(i)])}
+      if(typ==='eff'||typ==='min'||typ==='amrap'||typ==='ft'){if(!SIF('depart'))bipGo();file=[]}
+      if(typ==='rep'){if(!SIF('fin')){son(440,.18,.5);setTimeout(()=>son(440,.18,.5),250)}demanderNotes([exoDuRound(i)])}
       if(typ==='min'&&SEQ){if(i>0&&R.restants[i-1]==null)R.restants[i-1]=0;if(i>0&&!R.minutes[i-1])R.minutes[i-1]={ok:0,stop:R.echec?R.echec.j:Math.min(R.seq,ex.length-1),partiel:R.echec?R.echec.n:0,auto:1};R.seq=0;R.echec=null}
       if(avant==='')file=[];
     }
+    /* mi-course (AMRAP, FOR TIME avec limite) : 1 coup de sifflet */
+    if((typ==='amrap'||(typ==='ft'&&!sansCap))&&!miFait[o.k]&&o.dans>=dur/2){miFait[o.k]=1;SIF('mi')}
     let couleur='prep',titre='Prêt ?',corps='',grand=mmss(o.reste),sous='';
     if(typ==='prep'){titre='Prêt ?';grand=String(Math.ceil(o.reste));const e0=W.f==='tabata'?exoDuRound(0):0;corps=exoHTML(e0,false,null);sous=esc(opts.titreWod||'');}
     else if(typ==='eff'){couleur='eff';titre='EFFORT';sous='Round '+(i+1)+' / '+p.n;const k=exoDuRound(i);
@@ -191,7 +195,7 @@ function lancer(W,opts){
     return '';
   }
 
-  function terminer(){if(fini)return;fini=true;clearInterval(tick);eveil(false);fanfare();file=[];
+  function terminer(){if(fini)return;fini=true;clearInterval(tick);eveil(false);if(!SIF('fin'))fanfare();file=[];
     const t=ecoule(),te=Math.max(0,t-PREP);
     if(W.f==='fortime'){R.tours=R.ftPal;if(R.temps==null){if(p.pal&&!p.cap)R.arrete=Math.round(te);else R.temps=Math.round(Math.min(te,(p.pal?p.cap:(p.cap||6))*60))}}
     if(SEQ){const o=ou(Math.min(t,total-.01)),k=o&&o.ph[0]==='min'?o.ph[2]:(t>=total?p.min-1:-1);for(let m=0;m<=k;m++)if(!R.minutes[m])R.minutes[m]={ok:0,stop:m===k?Math.min(R.seq,ex.length-1):0,partiel:m===k&&R.echec?R.echec.n:0,auto:1}}
@@ -347,9 +351,9 @@ function lancer(W,opts){
     ${visL?`<div class="ch-vise"><label for="ch-vise">🎯 Je vise ${esc(visL[0])}</label><select id="ch-vise"><option value="">— pas d’objectif —</option>${Array.from({length:+visL[1]+1},(_,x)=>`<option value="${x}"${R.vise===x?' selected':''}>${x}</option>`).join('')}</select><small>${esc(visL[2])}</small></div>`:''}
     ${iosVeille?'<p class="ch-lab">⚠ Cette tablette peut se mettre en veille : garde l’écran allumé (touche-le de temps en temps). Le WOD reprend s’il se coupe.</p>':''}
     <div class="ch-corps"><div class="ch-liste">${ex.map((e,j)=>exoHTML(j,true,W.f==='tabata'?null:W.f==='emom1'?repsE1(j,0):W.f==='fortime'?repsFT(j):e.reps||null)).join('')}</div></div>
-    <div class="ch-bas"><button type="button" data-ch2="annuler">Annuler</button><button type="button" data-ch2="son">${libMode()}</button><button type="button" class="ch-ok" data-ch2="go">Départ (3 s)</button></div></div>`;
+    <div class="ch-bas"><button type="button" data-ch2="annuler">Annuler</button><button type="button" data-ch2="son">${libMode()}</button>${root.EPSSifflet?root.EPSSifflet.bouton():''}<button type="button" class="ch-ok" data-ch2="go">Départ (3 s)</button></div></div>`;
   v.querySelector('[data-ch2="son"]').onclick=e=>{modeSuivant();e.currentTarget.textContent=libMode()};
-  v.querySelector('[data-ch2="go"]').onclick=()=>{const s=v.querySelector('#ch-vise');R.vise=s&&s.value!==''?+s.value:null;demarrer()};
+  v.querySelector('[data-ch2="go"]').onclick=()=>{const s=v.querySelector('#ch-vise');R.vise=s&&s.value!==''?+s.value:null;root.EPSSifflet?root.EPSSifflet.demander(demarrer):demarrer()};
   v.querySelector('[data-ch2="annuler"]').onclick=()=>{fermer();opts.onAnnule&&opts.onAnnule()};
   return {fermer};
 }
