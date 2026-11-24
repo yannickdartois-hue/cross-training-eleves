@@ -438,10 +438,10 @@ async function montrerQR(i){
   if(!QRS){const F=fichiers(S.seance);QRS=[];for(const f of F){const k=S.eleves.findIndex(E=>E.nom===f.o.eleve);const P=await CTL.partiesQR(CTL.versQR(f.o));
     P.forEach((txt,j)=>QRS.push({titre:'ABC'[k]+' · '+f.o.eleve+(P.length>1?' · partie '+(j+1)+'/'+P.length:''),txt}))}}
   const k=Math.max(0,Math.min(i,QRS.length-1)),Q=QRS[k];
-  let svg;try{svg=qrSvg(Q.txt)}catch(e){svg='<p class="avert">Trop de données pour un QR : utilise l’envoi en ligne.</p>'}
-  fen(`<h3>${esc(Q.titre)} · séance ${S.seance}</h3><p class="small muted">QR ${k+1} sur ${QRS.length}</p><div class="qrbox">${svg}</div>
+  fen(`<h3>${esc(Q.titre)} · séance ${S.seance}</h3><p class="small muted">QR ${k+1} sur ${QRS.length}</p><div class="qrbox" id="tqr"></div><p class="small" id="tqn" style="text-align:center;font-weight:700"></p>
     <div class="rangee" style="margin-top:12px;justify-content:space-between"><button class="bt" type="button" data-act="qrnav" data-v="${k-1}" ${k?'':'disabled'}>← Précédent</button>
     ${k<QRS.length-1?`<button class="bt noir" type="button" data-act="qrnav" data-v="${k+1}">Suivant →</button>`:`<button class="bt orange" type="button" data-act="qrfin">Terminé</button>`}</div>`);
+  TTQR.anime($('#tqr'),TTQR.morceaux(Q.txt),$('#tqn')); // v1.8 : morceaux de 750 caractères qui défilent
 }
 function telecharger(nom,texte){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([texte],{type:'application/json'}));a.download=nom;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},1500)}
 async function enregistrerFichiers(){
