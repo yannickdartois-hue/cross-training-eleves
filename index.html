@@ -43,6 +43,14 @@ button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-vis
 /* Séances 1 à 9 */
 .seances{display:flex;align-items:center;gap:8px;padding:8px 16px;background:var(--encre);color:var(--sur-encre)}
 :root[data-theme="dark"] .seances{background:var(--craie);color:var(--encre);border-bottom:1px solid var(--trait)}
+/* sélecteur de séance « piste » (26/11/2026) */
+.seances .se-num{font:800 22px/1 var(--d);font-stretch:80%;letter-spacing:.01em;white-space:nowrap}.seances .se-num small{font-size:.7em;opacity:.75;font-weight:700}
+.seances .se-fait{font:700 14px/1 var(--d);opacity:.85;white-space:nowrap}
+.seances .se-bt{margin-left:auto;flex:none;height:44px;min-width:64px;padding:0 10px;border-radius:12px;background:none;color:inherit;border:1.5px solid color-mix(in srgb,currentColor 55%,transparent);font:800 18px/1 var(--d);cursor:pointer}
+.seances .se-bt:active{transform:scale(.97)}
+.se-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:8px;margin:6px 0 12px}
+.se-grille button{height:48px;border-radius:12px;font:800 19px/1 var(--d);background:none;color:inherit;border:1.5px solid color-mix(in srgb,currentColor 40%,transparent);cursor:pointer}
+.se-grille button.fait{border-color:#15803d;background:#dcfce7;color:#14532d}.se-grille button.ici{background:var(--ligne,#1c2128);border-color:var(--ligne,#1c2128);color:#fff}
 .seances .lab{font:800 16px/1 var(--d);font-stretch:80%;letter-spacing:.04em;text-transform:uppercase;flex:none}
 .strip{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0;padding:2px 0}
 .strip::-webkit-scrollbar{display:none}
@@ -476,6 +484,7 @@ html[data-qui="1"] .qui button.ici{background:#1d4ed8;border-color:#1d4ed8}
 <script src="lecteur.js"></script>
 <script src="eps-sifflet.js"></script>
 <script src="chrono.js"></script>
+<script src="eps-seances.js"></script>
 <script src="app.js"></script>
 <script src="demo.js"></script>
 <script src="oubli.js"></script>
