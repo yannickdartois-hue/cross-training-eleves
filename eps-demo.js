@@ -6,6 +6,7 @@
        🎭 DÉMO · rien n'est enregistré · [actions de l'appli] · Quitter
    26/11/2026 : bandeau dans le flux de la page (comme l'ancien bandeau jaune) au lieu d'une barre flottante en bas à gauche,
    qui cachait du contenu dans toutes les applis. Il pousse la page vers le bas : il ne recouvre plus jamais rien.
+   Pas de z-index : les fenêtres et voiles de l'appli (position fixe) passent au-dessus du bandeau.
    Rien n'est modifié dans l'appli : le module regarde seulement si elle est en démo.
    Le bandeau jaune .demo-bandeau de l'appli est alors masqué (pas de doublon, demande du 20/11/2026) :
    ses boutons et liens (« Voir l'outil prof »…) sont repris dans la barre violette, son « Quitter » sert au bouton Quitter.
@@ -36,7 +37,7 @@
   function css(){
     if(document.getElementById('eps-demo-style'))return;
     var s=document.createElement('style');s.id='eps-demo-style';
-    s.textContent='.eps-demo{position:relative;z-index:30;box-sizing:border-box;width:100%;margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 12px;'+
+    s.textContent='.eps-demo{box-sizing:border-box;width:100%;margin:0;display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:6px 12px;'+
       'padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right));background:#6d28d9;color:#fff;'+
       'font:700 15px/1.25 "Atkinson","Atkinson Hyperlegible","Segoe UI",Roboto,Arial,sans-serif;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18)}'+
       /* en tête de page : sous l'encoche des téléphones (appli installée en plein écran) */
