@@ -146,7 +146,7 @@ function rendre(){
   SE_FAITES=faites;
   $('#seances').innerHTML=g?`<b class="se-num">Séance ${S.seance}<small> / ${NB_SEANCES}</small></b>${faites.has(S.seance)?'<span class="se-fait">✓ faite</span>':''}<button type="button" id="btnSeance" class="se-bt" data-act="seancesListe" aria-label="Séance ${S.seance} sur ${NB_SEANCES} : changer de séance"></button>`:'';
   $('#seances').hidden=!g;
-  if(g)EPSSeances.bouton($('#btnSeance'),{cle:'cross-training-eleves:seance',rang:S.seance-1,total:NB_SEANCES,texte:'<span aria-hidden="true">▾</span>'});
+  if(g)EPSSeances.bouton($('#btnSeance'),{cle:'cross-training-eleves:seance',rang:S.seance-1,total:NB_SEANCES,texte:'S'+S.seance+' <span aria-hidden="true">▾</span>'});
   const parEleve=['seance','moi','jourj','progres'].includes(S.tab)&&S.eleves.length>1;
   $('#qui').hidden=!parEleve;
   $('#qui').innerHTML=parEleve?`<span class="small muted">Qui saisit ?</span>`+S.eleves.map((e,i)=>`<button type="button" data-act="qui" data-v="${i}" class="${S.cur===i?'ici':''}">${esc(prenom(e.nom))}</button>`).join(''):'';
