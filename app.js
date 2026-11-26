@@ -670,7 +670,8 @@ document.addEventListener('click',e=>{if(!e.target.closest('#theme'))return;cons
 majTheme();
 rendre();
 
-/* Code du cours (eps-code.js, commun) : la saisie ne s’ouvre qu’en cours, avec le code à 4 chiffres du professeur (2 h). */
-if(window.EPSCode)EPSCode.eleve({app:'cte',classe:()=>S&&S.classe||'',seance:()=>S?String(S.seance):'',seances:()=>Array.from({length:NB_SEANCES},(_,i)=>String(i+1)),nom:s=>'Séance '+s,
+/* Séance du jour (eps-code.js v2, commun) : la saisie ne s’ouvre qu’en cours, en scannant le QR du jour du professeur (2 h). Aucun code à taper. */
+if(window.EPSCode)EPSCode.eleve({app:'cte',qrApp:'CTE',scanner:v=>TTQR.scanner(async t=>{let o;try{o=await TTQR.decoder(t)}catch(e){throw new Error('Ce QR n’est pas un QR de cette appli. Demande le QR du jour à ton professeur.')}await v(o);return recevoirClasse(o)},{titre:'QR du jour',aide:'Scanne le QR affiché par le professeur : la séance s’ouvre.'}),
+  classe:()=>S&&S.classe||'',seance:()=>S?String(S.seance):'',seances:()=>Array.from({length:NB_SEANCES},(_,i)=>String(i+1)),nom:s=>'Séance '+s,
   ouvrir:s=>{if(!S)return;S.seance=+s;S.jours=S.jours||{};S.jours[today()]=+s;sauver();rendre()},
   actif:()=>!!S&&['seance','moi','jourj'].includes(S.tab),libre:['qui','tab','seance','fiche','video','fermer','fermerVoile','imprimer','qrnav','installok'],demo:()=>!!S&&S.classe==='DEMO'});
