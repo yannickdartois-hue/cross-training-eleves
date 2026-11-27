@@ -21,6 +21,7 @@ async function decoder(txt){
 }
 /* Ouvre la caméra dans une fenêtre et appelle onCode(texte) à chaque QR lu.
    opts.continu : reste ouvert (outil prof) ; sinon se ferme au premier QR.
+   opts.reste : fonction → HTML « Encore N élèves à scanner » (outil prof), recalculé après chaque QR lu (comme l'outil gym).
    opts.titre, opts.aide : textes. Renvoie une fonction pour fermer. */
 function scanner(onCode,opts){
   opts=opts||{};
@@ -29,6 +30,7 @@ function scanner(onCode,opts){
   v.innerHTML=`<div class="scan-fen" role="dialog" aria-modal="true"><h3>${opts.titre||'Scanner un QR code'}</h3>
     <div class="scan-cadre"><video playsinline muted></video><div class="scan-viseur"></div></div>
     <p class="scan-msg">${opts.aide||'Place le QR code dans le cadre.'}</p>
+    <div class="scan-manque" style="margin:4px 0;max-height:24vh;overflow:auto">${opts.reste?opts.reste():''}</div>
     <div class="scan-bas"><span class="scan-compte"></span><button type="button" class="bt noir scan-fin">${opts.continu?'Terminé':'Annuler'}</button></div></div>`;
   document.body.appendChild(v);
   const video=v.querySelector('video'),msg=v.querySelector('.scan-msg'),cpt=v.querySelector('.scan-compte');
@@ -55,6 +57,7 @@ function scanner(onCode,opts){
           const res=await onCode(txt);
           n++;cpt.textContent=n+' lu'+(n>1?'s':'');
           message(res||'QR code lu.',true);
+          if(opts.reste){const z=v.querySelector('.scan-manque');if(z)z.innerHTML=opts.reste()}
           try{navigator.vibrate&&navigator.vibrate(80)}catch(e){}
           if(!opts.continu){fermer();return}}
         }catch(e){message(e.message||String(e),false)}
