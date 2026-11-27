@@ -220,10 +220,15 @@ function carteWod(W,i,mob){
     ${W.fait?`<p class="small">${esc(sc)} · FC ${pastFC(W.fc,mob)} · ressenti ${esc(ressW(W))}${W.regul?' · '+W.regul+' régulation'+(W.regul>1?'s':''):''}${W.norep?' · '+W.norep+' no rep':''}${W.fcRec&&W.fc?' · récup −'+Math.max(0,W.fc-W.fcRec):''}${W.vise!=null&&W.realise!=null?' · visé '+W.vise+' / réalisé '+W.realise:''}</p>${W.alerte?'<p class="small ko">⚠ Alerte : le professeur doit être prévenu.</p>':''}${W.regle?`<p class="small">Décision : <b>${esc(CTL.REGLE[W.regle]||W.regle)}</b>${W.coach?' · coach '+esc(prenom(W.coach)):''}${W.conseil?' : « '+esc(W.conseil)+' »':''}</p>`:''}${W.com?`<p class="small muted">« ${esc(W.com)} »</p>`:''}${sd?`<p class="small ${sd.resultat==='oui'?'ok':sd.resultat==='non'?'avert':'muted'}">Décision d’avant (« ${esc(CTL.REGLE[sd.decision]||sd.decision)} ») : ${sd.resultat==='oui'?'✓ appliquée':sd.resultat==='non'?'✗ pas appliquée':'formats différents, à vérifier toi-même'}</p>`:''}`:''}
     ${(W.ex||[]).length&&!W.fait?`<button class="bt orange lancer" type="button" data-act="go" data-i="${i}">▶ Lancer le chrono</button>`:''}<div class="rangee">${W.fait&&W.regle?`<button class="bt orange" type="button" data-act="wdec" data-i="${i}">↻ Refaire avec ma décision : ${esc(CTL.REGLE[W.regle]||W.regle)}</button>`:''}${(W.ex||[]).length&&W.fait?`<button class="bt mini" type="button" data-act="go" data-i="${i}">Refaire à l’identique</button>`:''}<button class="bt mini" type="button" data-act="wmod" data-i="${i}">Modifier</button><button class="bt mini danger" type="button" data-act="wdel" data-i="${i}">Supprimer</button></div></article>`;
 }
+/* « Passer aux saisies de … » (règle commune des applis en binôme / groupe, modèle demi-fond élève) */
+function iSuivEl(){const n=S&&S.eleves?S.eleves.length:0;return n>1?(S.cur+1)%n:-1}
+function barreTourS(bas){const i=iSuivEl();if(i<0)return '';const pn=e=>esc(String(e.nom||'').split(/\s+/)[0]||e.nom);
+  return `<div class="eltour t${'abcd'[S.cur%4]}${bas?' bas':''}"><span>✏️ Saisies de <b>${pn(elv())}</b></span><button type="button" data-act="tourS" data-v="${i}">Passer aux saisies de ${pn(S.eleves[i])} ▶</button></div>`}
 function vSeance(){
   const E=elv(),n=S.seance,r=rec(E.id,n),mob=r.mobile||tab(E.id).mobile||'';
   const sce=estG()&&(SCE[pk()]||[]).includes(n);
   let h=installHTML()+programme(n);
+  h+=barreTourS();
   h+=`<section class="carte"><label class="coche disp"><input type="checkbox" data-ch="disp" ${r.disp?'checked':''}> Aujourd’hui je suis dispensé(e) : je suis assistant et juge de mon binôme</label>${r.disp?AVT('blesse','Tu es dispensé(e) : aujourd’hui, tu aides et tu juges ton binôme.'):''}
     <label class="ch" for="mob">Mon mobile</label><select id="mob" data-ch="mobile"><option value="">— pas encore choisi —</option>${Object.entries(MOBILES).filter(([k])=>k==='mod'||k==='elev').map(([k,M])=>`<option value="${k}"${mob===k?' selected':''}>${esc(M.nom)} · FC ${M.fc}</option>`).join('')}</select>
     ${mob?`<p class="small muted">${esc(MOBILES[mob].wod)}</p>`:''}</section>`;
@@ -237,6 +242,7 @@ function vSeance(){
     <p class="ch">Ma fatigue</p><div class="fatigue5">${[[1,'😩'],[2,'😓'],[3,'😐'],[4,'🙂'],[5,'😄']].map(([x,em])=>`<button type="button" class="${(r.rs||{}).fatigue===x?'on':''}" data-act="rsfa" data-v="${x}"><b>${em}</b>${esc(CTL.FATIGUE[x])}</button>`).join('')}</div>`:''}<label class="coche"><input type="checkbox" data-ch="etire" ${r.etire?'checked':''}> J’ai fait mes étirements (muscles travaillés, 20 à 30 s, sans douleur)</label>
     <label class="ch" for="bilan">Mon bilan (ce que j’ai senti, ce qui a marché, ce que j’ai régulé)</label><textarea id="bilan" data-ch="bilan" rows="3">${esc(r.bilan)}</textarea>
     <label class="ch" for="suite">Pour la prochaine fois (ce que je change et pourquoi)</label><textarea id="suite" data-ch="suite" rows="2">${esc(r.suite)}</textarea></section>`;
+  h+=barreTourS(true);
   return h;
 }
 function carteEtoile(r,sce){
@@ -560,6 +566,7 @@ document.addEventListener('click',async ev=>{
     case 'seancesListe':ouvrirSeances();return;
       case 'seance':$('#modal').innerHTML='';S.seance=+v;QRS=null;S.jours=S.jours||{};S.jours[today()]=S.seance;break;
     case 'qui':S.cur=+v;break;
+    case 'tourS':S.cur=+v;toast('✏️ Saisies de '+(String(S.eleves[S.cur].nom).split(/\s+/)[0]));setTimeout(()=>window.scrollTo(0,0),0);break;
     case 'installok':try{localStorage.setItem('ct_install_vu','1')}catch(e){}break;
     case 'qrclasse':TTQR.scanner(async t=>recevoirClasse(await TTQR.decoder(t)),{titre:'QR de la classe',aide:'Scanne le QR affiché par le professeur.'});return;
     case 'gvalider':{const L=[];
@@ -674,4 +681,4 @@ rendre();
 if(window.EPSCode)EPSCode.eleve({app:'cte',qrApp:'CTE',scanner:v=>TTQR.scanner(async t=>{let o;try{o=await TTQR.decoder(t)}catch(e){throw new Error('Ce QR n’est pas un QR de cette appli. Demande le QR du jour à ton professeur.')}await v(o);return recevoirClasse(o)},{titre:'QR du jour',aide:'Scanne le QR affiché par le professeur : la séance s’ouvre.'}),
   classe:()=>S&&S.classe||'',seance:()=>S?String(S.seance):'',seances:()=>Array.from({length:NB_SEANCES},(_,i)=>String(i+1)),nom:s=>'Séance '+s,
   ouvrir:s=>{if(!S)return;S.seance=+s;S.jours=S.jours||{};S.jours[today()]=+s;sauver();rendre()},
-  actif:()=>!!S&&['seance','moi','jourj'].includes(S.tab),libre:['qui','tab','seance','fiche','video','fermer','fermerVoile','imprimer','qrnav','installok'],demo:()=>!!S&&S.classe==='DEMO'});
+  actif:()=>!!S&&['seance','moi','jourj'].includes(S.tab),libre:['qui','tourS','tab','seance','fiche','video','fermer','fermerVoile','imprimer','qrnav','installok'],demo:()=>!!S&&S.classe==='DEMO'});

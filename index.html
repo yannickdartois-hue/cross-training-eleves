@@ -299,7 +299,7 @@ html.chrono-ouvert,html.chrono-ouvert body{overflow:hidden}
 .ch-avenir{margin:8px 0 0;opacity:.9}.ch-moyen.ch-ko,.ch-gros.ch-ko{border-color:#fecaca}
 .chr.prep{background:#334155}
 .chr.prep .ch-bas{position:sticky;bottom:calc(-1 * max(12px,env(safe-area-inset-bottom)));background:#334155;padding:10px 0 max(12px,env(safe-area-inset-bottom));margin-top:auto}
-.ch-crit button{display:block;width:100%}.chr.eff{background:#c2410c}.chr.rep{background:#0e7490}.chr.fin{background:#1f2937}.chr.pause{filter:saturate(.3)}
+.ch-crit button{display:block;width:100%}/* règle commune : effort VERT, repos ROUGE */.chr.eff{background:#15803d}.chr.rep{background:#b91c1c}.chr.fin{background:#1f2937}.chr.pause{filter:saturate(.3)}
 .ch-haut{display:flex;justify-content:space-between;gap:10px;width:100%;font-size:15px;opacity:.9;flex-wrap:wrap}
 .ch-titre{font:800 clamp(26px,5vw,44px)/1 var(--d);margin:10px 0 0;letter-spacing:.04em}
 .ch-temps{font:800 clamp(80px,20vw,190px)/1 var(--d);margin:4px 0;font-variant-numeric:tabular-nums}
@@ -456,6 +456,12 @@ html[data-qui="1"] .qui button.ici{background:#1d4ed8;border-color:#1d4ed8}
 .ch-regle button.conseil{border-style:dashed;border-color:#fde68a}.ch-regle button.on{background:#fff;color:#1f2937}
 .ch-form select{width:100%;min-height:52px;border-radius:12px;border:0;padding:0 10px;font:17px var(--t);color:#1f2937;background:#fff}
 .ch-rappel{background:rgba(255,255,255,.15);border-radius:12px;padding:8px 12px;max-width:520px}
+
+/* « Passer aux saisies de … » (règle commune des applis en binôme, modèle demi-fond élève) : une couleur par élève */
+.eltour{border-radius:14px;padding:8px 10px;color:#fff;margin:8px 0 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.eltour.bas{margin:16px 0 8px}.eltour.ta{background:#c2410c}.eltour.tb{background:#1d4ed8}/* ici, B est déjà en bleu (« Qui saisit ? ») */.eltour.tc{background:#15803d}.eltour.td{background:#6d28d9}
+.eltour>span{font-size:16px}.eltour b{font-size:17px}
+.eltour button{background:#fff;color:#14181f;border:0;border-radius:12px;min-height:48px;padding:0 14px;font:inherit;font-weight:800;font-size:16px;cursor:pointer;flex:1 1 auto;max-width:100%}
 </style>
 <style>/* Lisibilité terrain : textes à 15 px minimum à l'écran ; tailles d'origine à l'impression. */@media print{:root{--fs-min:0px}}</style>
 <link rel="stylesheet" href="eps-charte-v1.css">
